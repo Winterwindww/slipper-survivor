@@ -208,6 +208,38 @@ function biteOnce(n){
   const lostTwice = hp0 - A.P.hp;
   ok('1.1 秒受伤间隔内只结算一次', lostTwice > lostOnce * 1.4 && lostTwice < lostOnce * 2.4,
      '0.6s=' + lostOnce.toFixed(1) + '，1.6s=' + lostTwice.toFixed(1));
+
+  /* 【5.0 回归】撞上去必须**立刻**掉血。
+     这条防的是"冷却只在贴身时递减"的老写法：那样挨过一口再离开，
+     冷却会冻结，下一次撞上去的第一口不结算——玩家看到的就是"撞怪不掉血"。 */
+  {
+    const B = setup('ranger');
+    B.state.time = 40;
+    B.P.contactT = 0;
+    const e2 = B.spawn('slime', 1)[0] || B.enemies[B.enemies.length - 1];
+    e2.x = B.P.x + 9; e2.y = B.P.y; e2.speed = 0; e2.hp = 1e7; e2.maxHp = 1e7;
+    const h0 = B.P.hp;
+    B.step(1 / 60);                       /* 只有一帧 */
+    const oneFrame = h0 - B.P.hp;
+    ok('撞上去第一帧就掉血（不是等冷却）', oneFrame > 0,
+       '一帧掉 ' + oneFrame.toFixed(1));
+    /* 离开接触 1.2 秒，再撞回来：仍然必须立刻结算 */
+    e2.x = B.P.x + 400;
+    for(let i = 0; i < 72; i++) B.step(1 / 60);
+    /* 这 1.2 秒里玩家可能升级（mode 变成 levelup，updateGame 不再推进），先回到 playing */
+    B.state.pending = 0;
+    B.state.mode = 'playing';
+    /* 游侠有 11% 闪避，单帧断言会抖；最多试 10 次，只要有一帧结算就算过 */
+    let hitFrame = 0;
+    for(let k = 0; k < 10 && !hitFrame; k++){
+      B.P.contactT = 0;
+      e2.x = B.P.x + 9; e2.stun = 0;
+      const hh = B.P.hp;
+      B.step(1 / 60);
+      if(hh - B.P.hp > 0) hitFrame = hh - B.P.hp;
+    }
+    ok('离开再撞回来仍然立刻掉血', hitFrame > 0, '单帧掉 ' + hitFrame.toFixed(1));
+  }
 }
 
 /* ---- 4b. 统一受伤管线：接触伤害也要先吃护盾 ---- */

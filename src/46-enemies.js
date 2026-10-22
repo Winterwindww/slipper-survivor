@@ -14,40 +14,40 @@
    ========================================================= */
 const ENEMIES = {
   /* --- 前期：又慢又软 --- */
-  slime:   { spr:'slime',   hp:12,  spd:24, r:5.5, dmg:19, xp:2, sc:1,   col:'#a8f5af', ai:'chase' },
+  slime:   { spr:'slime',   hp:12,  spd:24, r:5.5, dmg:16, xp:2, sc:1,   col:'#a8f5af', ai:'chase' },
   /* --- 第 18 秒起 --- */
-  carrot:  { spr:'carrot',  hp:18,  spd:32, r:5.2, dmg:22, xp:3, sc:1,   col:'#ff8a3d', ai:'dash' },
+  carrot:  { spr:'carrot',  hp:18,  spd:32, r:5.2, dmg:19, xp:3, sc:1,   col:'#ff8a3d', ai:'dash' },
   /* --- 第 38 秒起 --- */
-  bat:     { spr:'bat',     hp:10,  spd:58, r:5.0, dmg:14, xp:2, sc:1,   col:'#bb8bdc', ai:'weave' },
+  bat:     { spr:'bat',     hp:10,  spd:58, r:5.0, dmg:12, xp:2, sc:1,   col:'#bb8bdc', ai:'weave' },
   /* --- 第 55 秒起 --- */
-  shooter: { spr:'shooter', hp:26,  spd:24, r:5.5, dmg:17, xp:5, sc:1,   col:'#b6f78e', ai:'ranged',
+  shooter: { spr:'shooter', hp:26,  spd:24, r:5.5, dmg:14, xp:5, sc:1,   col:'#b6f78e', ai:'ranged',
              shot:{ keep:[150,215], range:330, cd:2.6, n:1, spd:112, mul:1.35, col:'#ff4fd8', r:4 } },
   /* --- 第 70 秒起 --- */
-  bomb:    { spr:'bomb',    hp:16,  spd:66, r:6.0, dmg:42, xp:4, sc:1,   col:'#ff5d5d', ai:'kamikaze' },
+  bomb:    { spr:'bomb',    hp:16,  spd:66, r:6.0, dmg:36, xp:4, sc:1,   col:'#ff5d5d', ai:'kamikaze' },
   /* --- 第 85 秒起 --- */
-  pudding: { spr:'pudding', hp:36,  spd:30, r:6.5, dmg:22, xp:6, sc:1,   col:'#ffcf8a', ai:'split' },
+  pudding: { spr:'pudding', hp:36,  spd:30, r:6.5, dmg:19, xp:6, sc:1,   col:'#ffcf8a', ai:'split' },
   /* --- 第 100 秒起 --- */
-  burger:  { spr:'burger',  hp:54,  spd:26, r:7.5, dmg:30, xp:8, sc:1.1, col:'#f2b45c', ai:'chase', tank:true },
+  burger:  { spr:'burger',  hp:54,  spd:26, r:7.5, dmg:26, xp:8, sc:1.1, col:'#f2b45c', ai:'chase', tank:true },
   /* --- 第 115 秒起：幽灵，直线加速冲过来 --- */
-  ghost:   { spr:'ghost',   hp:20,  spd:66, r:5.4, dmg:19, xp:4, sc:1,   col:'#cfd6ff', ai:'ghost', alpha:0.78 },
+  ghost:   { spr:'ghost',   hp:20,  spd:66, r:5.4, dmg:16, xp:4, sc:1,   col:'#cfd6ff', ai:'ghost', alpha:0.78 },
   /* --- 第 130 秒起：青蛙，蹦跳突进 --- */
-  frog:    { spr:'frog',    hp:32,  spd:30, r:6.0, dmg:24, xp:5, sc:1,   col:'#6fe0c8', ai:'hop' },
+  frog:    { spr:'frog',    hp:32,  spd:30, r:6.0, dmg:20, xp:5, sc:1,   col:'#6fe0c8', ai:'hop' },
   /* --- 第 148 秒起：蜜蜂，绕着玩家转圈后俯冲 --- */
-  bee:     { spr:'bee',     hp:18,  spd:84, r:4.8, dmg:19, xp:4, sc:1,   col:'#ffd166', ai:'circle' },
+  bee:     { spr:'bee',     hp:18,  spd:84, r:4.8, dmg:16, xp:4, sc:1,   col:'#ffd166', ai:'circle' },
   /* --- 第 195 秒起：铁罐兵，又慢又厚 --- */
-  iron:    { spr:'burger',  hp:150, spd:17, r:9.0, dmg:37, xp:14, sc:1.35, col:'#9fb4c9', ai:'chase', tank:true },
+  iron:    { spr:'burger',  hp:150, spd:17, r:9.0, dmg:31, xp:14, sc:1.35, col:'#9fb4c9', ai:'chase', tank:true },
   /* --- 第 215 秒起：蚁群，小快灵，一次来一群 --- */
-  ant:     { spr:'slime',   hp:9,   spd:104,r:3.4, dmg:9, xp:2, sc:0.55, col:'#c58b5a', ai:'chase' },
+  ant:     { spr:'slime',   hp:9,   spd:104,r:3.4, dmg:8, xp:2, sc:0.55, col:'#c58b5a', ai:'chase' },
   /* --- 第 165 秒起：毒蘑菇，死后留下毒雾 --- */
-  mushroom:{ spr:'mushroom',hp:44,  spd:21, r:6.6, dmg:22, xp:6, sc:1,   col:'#ff8fb0', ai:'chase', poison:true },
+  mushroom:{ spr:'mushroom',hp:44,  spd:21, r:6.6, dmg:19, xp:6, sc:1,   col:'#ff8fb0', ai:'chase', poison:true },
 
   /* --- 后半场专属 --- */
   /* 重甲兵：血厚 + 45% 减伤 + 强击退抗性，逼你换"爆炸/穿透"而不是硬砍 */
-  brute:   { spr:'brute',   hp:130, spd:17,  r:8.5, dmg:42, xp:24, sc:1.0, col:'#9fb4c9', ai:'chase', tank:true, armor:0.45, knockRes:0.7 },
+  brute:   { spr:'brute',   hp:130, spd:17,  r:8.5, dmg:36, xp:24, sc:1.0, col:'#9fb4c9', ai:'chase', tank:true, armor:0.45, knockRes:0.7 },
   /* 疾行者：绕行走位 + 极快，专门惩罚站桩 */
-  runner:  { spr:'runner',  hp:40,  spd:118, r:5.0, dmg:27, xp:14, sc:1.0, col:'#c9a0ff', ai:'weave' },
+  runner:  { spr:'runner',  hp:40,  spd:118, r:5.0, dmg:23, xp:14, sc:1.0, col:'#c9a0ff', ai:'weave' },
   /* 巢母：站在远处不停下崽，放着不管会越积越多 */
-  nest:    { spr:'nest',    hp:210, spd:10,  r:9.5, dmg:22, xp:34, sc:1.0, col:'#ffb0c4', ai:'spawner' },
+  nest:    { spr:'nest',    hp:210, spd:10,  r:9.5, dmg:19, xp:34, sc:1.0, col:'#ffb0c4', ai:'spawner' },
 
   /* --- 远程线（2.6 新增）---
      5.0：弹幕单独给百分比（shot.pct），不再共用接触伤害的 dmg。
@@ -55,11 +55,11 @@ const ENEMIES = {
        sniper  10% · 5.4 秒一发，慢但看得见，逼你横向移动
        spitter  7% · 3.2 秒一发三连扇形
        thrower  8% · 4.2 秒一发，落点炸一小片 */
-  sniper:  { spr:'sniper',  hp:34, spd:20, r:5.8, dmg:20, xp:7,  sc:1.0,  col:'#e05575', ai:'ranged',
+  sniper:  { spr:'sniper',  hp:34, spd:20, r:5.8, dmg:17, xp:7,  sc:1.0,  col:'#e05575', ai:'ranged',
              shot:{ keep:[380,520], range:600, cd:5.4, n:1, spd:170, mul:2.20, col:'#ff2040', r:4.5 } },
-  spitter: { spr:'spitter', hp:46, spd:28, r:6.4, dmg:22, xp:8,  sc:1.0,  col:'#9cff6b', ai:'ranged',
+  spitter: { spr:'spitter', hp:46, spd:28, r:6.4, dmg:19, xp:8,  sc:1.0,  col:'#9cff6b', ai:'ranged',
              shot:{ keep:[200,310], range:360, cd:3.2, n:1, spd:120, mul:1.50, col:'#ff8a00', r:4 } },
-  thrower: { spr:'thrower', hp:72, spd:16, r:7.4, dmg:24, xp:11, sc:1.05, col:'#ffb066', ai:'ranged',
+  thrower: { spr:'thrower', hp:72, spd:16, r:7.4, dmg:20, xp:11, sc:1.05, col:'#ffb066', ai:'ranged',
              shot:{ keep:[300,440], range:500, cd:4.2, n:1, spd:130, mul:1.60, col:'#ff8a00', r:6, boom:48 } }
 };
 

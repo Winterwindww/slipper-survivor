@@ -39,6 +39,11 @@ function updateGame(dt){
   /* 【4.0】冲刺：被围时唯一的解，也是"顺势"输出的来源 */
   dashTick(dt);
 
+  /* 【5.0】接触伤害的冷却按真实时间流逝。
+     放在这里（而不是 applyContact 里）是为了让"离开接触"不冻结冷却：
+     撞上去的第一口永远立刻结算，之后才是每 contactTick 一次。 */
+  if(P.contactT > 0) P.contactT = Math.max(0, P.contactT - dt);
+
   if(P.invuln > 0) P.invuln -= dt;
   /* 【4.1 难度】脱战恢复：3.5 秒 / 1.8%/秒 → **4.5 秒 / 0.18%/秒**。
      ---------------------------------------------------------

@@ -219,7 +219,9 @@ function runOnce(seed, minutes){
         en: SS.enemies.length,
         hurt: Math.round(st.hurtAcc || 0),
         heal: Math.round(st.healAcc || 0),
-        lv: SS.P.level
+        lv: SS.P.level,
+        minD: (function(){ let m=1e9; for(const e of SS.enemies){ if(e.dead) continue; const d=Math.hypot(e.x-SS.P.x,e.y-SS.P.y); if(d<m) m=d; } return m===1e9?-1:Math.round(m); })(),
+        pr: Math.round(SS.P.r)
       });
     }
   }
@@ -254,7 +256,7 @@ if(JSON_OUT){
     console.log(`  逻辑成本：${perMin.toFixed(0)}ms / 游戏分钟`);
     if(TRACE && r.trace){
       console.log('  时间\t血量\t贴身\t敌人\t累计受伤\t累计治疗\t等级');
-      for(const s of r.trace) console.log(`  ${s.t}\t${s.hp}/${s.maxHp}\t${s.atk}\t${s.en}\t${s.hurt}\t${s.heal}\tLv${s.lv}`);
+      for(const s of r.trace) console.log(`  ${s.t}\t${s.hp}/${s.maxHp}\t${s.atk}\t${s.en}\t${s.hurt}\t${s.heal}\tLv${s.lv}\t最近${s.minD}\tpr${s.pr}`);
     }
   }
 }
