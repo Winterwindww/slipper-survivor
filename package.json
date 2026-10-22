@@ -1,0 +1,19 @@
+{
+  "name": "slipper-survivor",
+  "version": "3.2.0",
+  "private": true,
+  "type": "module",
+  "description": "拖鞋幸存者 · 单文件像素肉鸽割草",
+  "scripts": {
+    "build": "node tools/build.mjs",
+    "check": "node tools/build.mjs --check",
+    "verify": "node tools/lint-data.mjs && node tools/verify-3.0.mjs && node tools/verify-2.6.mjs",
+    "gate": "node tools/funcgate.mjs",
+    "sim": "node tools/sim.mjs",
+    "sim:still": "node tools/sim.mjs --minutes 10 --still --trace",
+    "duel": "node tools/duel.mjs --level 30 --seeds 3",
+    "verify:3": "node tools/verify-3.0.mjs",
+    "dps": "node tools/weapondps.mjs --lv 1,3,5 --sec 20",
+    "lint": "node tools/lint-data.mjs"
+  }
+}

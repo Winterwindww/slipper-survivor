@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>拖鞋幸存者 · Slipper Survivor</title>
+<style>
+  :root{
+    --ink:#2b1e3d;
+    --cream:#fff6e6;
+    --pink:#ff8fb0;
+    --mint:#8ee6b3;
+    --yellow:#ffd166;
+    --violet:#a78bfa;
+    --sky:#7ce3ff;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{
+    height:100%;margin:0;overflow:hidden;
+    background:
+      radial-gradient(circle at 50% 0%, #46325f 0%, #2a1c3e 45%, #150f21 100%);
+    display:flex;align-items:center;justify-content:center;
+    font-family:"Microsoft YaHei","PingFang SC","Hiragino Sans GB",system-ui,sans-serif;
+    color:#fff;
+  }
+  #stage{
+    position:relative;
+    background:#7ecb5c;
+    box-shadow:0 0 0 4px #120c1c, 0 0 0 8px #453064, 0 24px 60px rgba(0,0,0,.65);
+    overflow:hidden;
+    border-radius:3px;
+    --u:3px;
+  }
+  #game{
+    display:block;width:100%;height:100%;
+    image-rendering:pixelated;image-rendering:crisp-edges;
+  }
+
+  /* ---------------- HUD ---------------- */
+  #lowhp{position:absolute;inset:0;pointer-events:none;opacity:0;box-shadow:inset 0 0 calc(var(--u)*14) calc(var(--u)*3) rgba(255,60,80,.55);transition:opacity .25s}
+  #lowhp.on{opacity:1;animation:lowpulse 1.1s ease-in-out infinite}
+  @keyframes lowpulse{0%,100%{opacity:.45}50%{opacity:.95}}
+  #hud{position:absolute;inset:0;pointer-events:none;user-select:none}
+  /* 【4.2】通用 hidden 规则。
+     之前只有 #hud.hidden 和 .overlay.hidden 两条——
+     于是「继续无尽」按钮上的 class="hidden" **完全没生效**，
+     它从开局就一直显示在结算面板里，死了也能点、能无限继续。
+     这一条是那个 bug 的真正原因。 */
+  .hidden{display:none !important}
+  #hud.hidden{display:none}
+
+  #xpwrap{
+    position:absolute;left:0;right:0;top:0;height:calc(var(--u)*3.6);
+    background:rgba(24,14,36,.78);
+    box-shadow:inset 0 -1px 0 rgba(255,255,255,.18);
+  }
+  #xpfill{
+    height:100%;width:0%;
+    background:linear-gradient(90deg,#5fd8ff,#a78bfa 60%,#ff9de2);
+    box-shadow:0 0 8px rgba(140,220,255,.65);
+  }
+
+  #topbar{
+    position:absolute;left:calc(var(--u)*4);right:calc(var(--u)*4);top:calc(var(--u)*4.4);
+    display:flex;align-items:center;gap:calc(var(--u)*4);
+  }
+  #hpbox{
+    display:flex;align-items:center;gap:calc(var(--u)*2);
+    background:rgba(24,14,36,.55);
+    padding:calc(var(--u)*1.4) calc(var(--u)*2.6) calc(var(--u)*1.4) calc(var(--u)*1.6);
+    border-radius:calc(var(--u)*2);
+    box-shadow:inset 0 0 0 1px rgba(255,255,255,.14);
+  }
+  #hpbox .heart{color:#ff6b8f;font-size:calc(var(--u)*5.4);line-height:1;text-shadow:0 0 6px rgba(255,90,130,.6)}
+  .hpcol{display:flex;flex-direction:column;gap:calc(var(--u)*.5)}
+  #hpbar{
+    width:calc(var(--u)*38);height:calc(var(--u)*4.2);
+    background:rgba(0,0,0,.45);border-radius:calc(var(--u)*1);
+    overflow:hidden;box-shadow:inset 0 0 0 1px rgba(0,0,0,.4);
+  }
+  #hpfill{
+    height:100%;width:100%;
+    background:linear-gradient(90deg,#ff5f7e,#ff9f6e);
+    box-shadow:0 0 6px rgba(255,90,120,.55);
+    transition:width .12s ease-out;
+  }
+  /* 3.0 资源条：怒气 / 充能 / 护盾，一条 3px，一起读得出来 */
+  .rbrow{display:flex;gap:calc(var(--u)*.8);align-items:center;width:calc(var(--u)*38);height:calc(var(--u)*1.7)}
+  .rb{
+    position:relative;flex:1;height:100%;border-radius:99px;
+    background:rgba(0,0,0,.5);overflow:hidden;
+    box-shadow:inset 0 0 0 1px rgba(255,255,255,.10);
+  }
+  .rb i{
+    display:block;height:100%;width:0%;border-radius:99px;
+    transition:width .1s linear;
+  }
+  #rbRage i{background:linear-gradient(90deg,#ff5a3d,#ffb056);box-shadow:0 0 6px rgba(255,120,70,.8)}
+  #rbCharge i{background:linear-gradient(90deg,#2fa8d8,#7ce3ff);box-shadow:0 0 6px rgba(110,220,255,.8)}
+  #rbShield i{background:linear-gradient(90deg,#5fc8ff,#d8f6ff);box-shadow:0 0 6px rgba(160,230,255,.8)}
+  .rb.off{display:none}
+  .rb.on i{animation:rbglow .5s ease-in-out infinite alternate}
+  @keyframes rbglow{from{filter:brightness(1)}to{filter:brightness(1.55)}}
+  #hptext{
+    font-size:calc(var(--u)*3.6);font-weight:700;letter-spacing:.5px;
+    color:#ffe9ef;font-variant-numeric:tabular-nums;min-width:calc(var(--u)*18);
+  }
+
+  /* 3.0 怒气条：骑士专属，放在屏幕下方（顶部只留总击杀统计） */
+  /* 【4.1】底部怒气条已移除：状态栏搬到了人物脚下。 */
+  /* 4.2 机制条：只剩冲刺段数 */
+  #mechwrap{
+    position:absolute;left:calc(var(--u)*4);bottom:calc(var(--u)*19);
+    display:flex;align-items:center;gap:calc(var(--u)*2.4);
+    font-size:calc(var(--u)*3.2);color:#cfe6ff;opacity:.92;
+  }
+  #dashpips{display:flex;gap:calc(var(--u)*1.1)}
+  #dashpips i{
+    display:block;width:calc(var(--u)*4.4);height:calc(var(--u)*4.4);border-radius:50%;
+    background:rgba(18,26,40,.85);
+    box-shadow:inset 0 0 0 calc(var(--u)*.6) rgba(120,220,255,.40);
+    transition:background .12s;
+  }
+  #dashpips i.on{
+    background:radial-gradient(circle at 38% 32%,#d8f6ff,#3fbdf0);
+    box-shadow:0 0 calc(var(--u)*3) rgba(110,220,255,.85);
+  }
+
+  #timer{
+    margin-left:auto;font-size:calc(var(--u)*6);font-weight:800;
+    letter-spacing:calc(var(--u)*.4);
+    text-shadow:0 calc(var(--u)*.7) 0 #1c1129, 0 0 10px rgba(255,209,102,.35);
+    color:#fff3d6;font-variant-numeric:tabular-nums;
+  }
+  #killbox{
+    display:flex;align-items:center;gap:calc(var(--u)*1.4);
+    background:rgba(24,14,36,.55);
+    padding:calc(var(--u)*1.4) calc(var(--u)*2.6);
+    border-radius:calc(var(--u)*2);
+    box-shadow:inset 0 0 0 1px rgba(255,255,255,.14);
+    font-size:calc(var(--u)*3.8);font-weight:800;color:#ffe9c4;
+    font-variant-numeric:tabular-nums;
+  }
+  #killbox .skull{color:#ffb0c4;font-size:calc(var(--u)*4.2);line-height:1}
+  #killbox.pop{animation:killpop .22s ease-out}
+  @keyframes killpop{
+    0%{transform:scale(1)}
+    35%{transform:scale(1.13);box-shadow:inset 0 0 0 1px rgba(255,209,102,.9),0 0 calc(var(--u)*3) rgba(255,209,102,.55)}
+    100%{transform:scale(1)}
+  }
+  #lvbox{
+    background:linear-gradient(180deg,#ffd166,#ffb347);
+    color:#4a2d0c;font-weight:800;
+    font-size:calc(var(--u)*3.8);
+    padding:calc(var(--u)*1.4) calc(var(--u)*3);
+    border-radius:calc(var(--u)*1.6);
+    box-shadow:0 calc(var(--u)*.9) 0 #b9772a;
+    letter-spacing:.5px;
+  }
+
+  #invbar{
+    position:absolute;left:calc(var(--u)*4);bottom:calc(var(--u)*4);
+    display:flex;flex-wrap:wrap;gap:calc(var(--u)*1.6);
+    max-width:calc(var(--u)*300);
+  }
+  .slot{
+    position:relative;
+    width:calc(var(--u)*11.5);height:calc(var(--u)*11.5);
+    background:rgba(28,17,42,.72);
+    border-radius:calc(var(--u)*1.6);
+    box-shadow:inset 0 0 0 calc(var(--u)*.6) rgba(255,255,255,.16);
+    display:flex;align-items:center;justify-content:center;
+  }
+  .slot canvas{width:calc(var(--u)*9);height:calc(var(--u)*9);image-rendering:pixelated}
+  .slot .lvc{
+    position:absolute;right:calc(var(--u)*.4);bottom:calc(var(--u)*.1);
+    font-size:calc(var(--u)*2.8);font-weight:800;color:#ffe9a8;
+    text-shadow:0 calc(var(--u)*.5) 0 rgba(0,0,0,.7);
+  }
+  .slot.w{box-shadow:inset 0 0 0 calc(var(--u)*.6) rgba(255,209,102,.55)}
+  .slot.p{box-shadow:inset 0 0 0 calc(var(--u)*.6) rgba(124,227,255,.5)}
+
+  #dieBtn{
+    margin-top:calc(var(--u)*1.6);
+    font-size:calc(var(--u)*3.2);
+    color:#ffe3ea;
+    background:linear-gradient(180deg,#7d2740,#4a1526);
+    border:calc(var(--u)*.6) solid rgba(255,140,170,.55);
+    box-shadow:0 calc(var(--u)*1) 0 rgba(0,0,0,.35);
+  }
+  #dieBtn:hover{ background:linear-gradient(180deg,#9a3050,#5c1a2f); }
+
+  #mutebtn, #pausebtn{
+    position:absolute;bottom:calc(var(--u)*4);
+    width:calc(var(--u)*11);height:calc(var(--u)*11);
+    border:0;border-radius:calc(var(--u)*1.8);
+    background:rgba(28,17,42,.8);
+    color:#ffe9a8;font-size:calc(var(--u)*4.6);font-weight:800;
+    cursor:pointer;pointer-events:auto;
+    box-shadow:inset 0 0 0 calc(var(--u)*.6) rgba(255,255,255,.2);
+    opacity:.75;transition:opacity .15s,transform .15s;
+  }
+  #pausebtn{right:calc(var(--u)*4)}
+  #mutebtn{right:calc(var(--u)*17);font-size:calc(var(--u)*4.2);line-height:1}
+  #mutebtn:hover, #pausebtn:hover{opacity:1;transform:scale(1.06)}
+  #mutebtn.off{opacity:.42}
+
+  #toast{
+    position:absolute;left:0;right:0;top:22%;
+    text-align:center;font-size:calc(var(--u)*8);font-weight:800;
+    color:#ffd166;letter-spacing:2px;
+    text-shadow:0 calc(var(--u)*.8) 0 #5a2c00, 0 0 18px rgba(255,160,60,.8);
+    opacity:0;transition:opacity .3s;
+  }
+  #toast.show{opacity:1;animation:toastPop .5s ease-out}
+  /* toast 要能盖在升级遮罩上面，否则融合/进化提示全被挡住 */
+  #toast{z-index:36}
+
+  @keyframes toastPop{0%{transform:scale(.6)}60%{transform:scale(1.12)}100%{transform:scale(1)}}
+
+  /* ---------------- 角色选择 ---------------- */
+  #charselect{
+    background:linear-gradient(180deg, rgba(18,10,30,.96), rgba(24,14,38,.98));
+    gap:calc(var(--u)*3.2);
+  }
+  .cs-head{
+    font-size:calc(var(--u)*7.2);font-weight:900;color:#ffe9a8;letter-spacing:2px;
+    text-shadow:0 calc(var(--u)*.9) 0 #5b2f7a, 0 0 calc(var(--u)*12) rgba(255,210,110,.5);
+  }
+  .cs-sub{font-size:calc(var(--u)*3.2);color:#a99ac2;letter-spacing:1px;margin-top:calc(var(--u)*-2)}
+  .cs-grid{
+    display:grid;grid-template-columns:repeat(3, 1fr);
+    gap:calc(var(--u)*2.6);width:calc(var(--u)*252);max-width:96%;
+  }
+  .cs-card{
+    background:linear-gradient(180deg,#3a2a52,#241734);
+    border-radius:calc(var(--u)*2);
+    padding:calc(var(--u)*2.4) calc(var(--u)*2.2) calc(var(--u)*2.6);
+    cursor:pointer;position:relative;overflow:hidden;
+    box-shadow:0 0 0 calc(var(--u)*.8) var(--cc,#ffd166), 0 calc(var(--u)*1.4) calc(var(--u)*4) rgba(0,0,0,.5);
+    transition:transform .12s ease, box-shadow .12s ease, filter .12s;
+    display:flex;flex-direction:column;gap:calc(var(--u)*.9);
+    text-align:left;
+  }
+  .cs-card::before{content:"";position:absolute;left:0;right:0;top:0;height:calc(var(--u)*1.2);background:var(--cc,#ffd166)}
+  .cs-card:hover{
+    transform:translateY(calc(var(--u)*-1.8)) scale(1.03);
+    box-shadow:0 0 0 calc(var(--u)*.9) var(--cc), 0 0 calc(var(--u)*14) var(--cc), 0 calc(var(--u)*2) calc(var(--u)*6) rgba(0,0,0,.55);
+    filter:brightness(1.08);
+  }
+  .cs-top{display:flex;align-items:center;gap:calc(var(--u)*1.4);margin-top:calc(var(--u)*.8)}
+  .cs-top canvas{width:calc(var(--u)*15);height:calc(var(--u)*15);image-rendering:pixelated}
+  .cs-name{font-size:calc(var(--u)*4);font-weight:900;color:#fff5e2}
+  .cs-title{font-size:calc(var(--u)*2.4);color:var(--cc);letter-spacing:1px;font-weight:800;opacity:.9}
+  .cs-blurb{font-size:calc(var(--u)*2.9);color:#cdc0e0;line-height:1.5;min-height:calc(var(--u)*8)}
+  .cs-school{font-size:calc(var(--u)*2.5);color:#7ef0c0;font-weight:800;letter-spacing:.5px}
+  .cs-perk{font-size:calc(var(--u)*2.7);color:#ffd166;line-height:1.45;border-top:calc(var(--u)*.3) dashed rgba(255,209,102,.3);padding-top:calc(var(--u)*.9)}
+  .cs-perk b{color:#ffe9a8}
+  .cs-own{font-size:calc(var(--u)*2.6);color:#9fe0ff;font-weight:800;letter-spacing:.3px}
+  .cs-hint{font-size:calc(var(--u)*3);color:#8f7fac;letter-spacing:1px}
+
+  /* HUD 角色机制显示 */
+  #perkbox{
+    position:absolute;left:calc(var(--u)*4);top:calc(var(--u)*13.5);
+    font-size:calc(var(--u)*3.2);font-weight:800;color:#ffd166;
+    text-shadow:0 calc(var(--u)*.5) 0 rgba(0,0,0,.7);
+    background:rgba(24,14,36,.55);
+    padding:calc(var(--u)*.8) calc(var(--u)*2.2);
+    border-radius:calc(var(--u)*1.4);
+    box-shadow:inset 0 0 0 1px rgba(255,209,102,.28);
+  }
+  #perkbox:empty{display:none}
+  /* 局内目标：一直挂在右上，跟着倒计时走，让玩家知道"这局要干什么" */
+  #goal{
+    position:absolute;right:calc(var(--u)*4);top:calc(var(--u)*13.5);
+    display:flex;align-items:center;gap:calc(var(--u)*1.2);
+    font-size:calc(var(--u)*3.0);font-weight:800;color:#ffe9c4;
+    background:rgba(24,14,36,.6);
+    padding:calc(var(--u)*.9) calc(var(--u)*2.4);
+    border-radius:calc(var(--u)*1.4);
+    box-shadow:inset 0 0 0 1px rgba(255,209,102,.32);
+    font-variant-numeric:tabular-nums;
+  }
+  #goal b{color:#ffd166;letter-spacing:.5px}
+  #goal.urgent{
+    color:#fff;background:rgba(120,20,50,.72);
+    box-shadow:inset 0 0 0 1px rgba(255,120,150,.85),0 0 calc(var(--u)*6) rgba(255,80,120,.5);
+    animation:goalPulse 1s ease-in-out infinite;
+  }
+  @keyframes goalPulse{0%,100%{opacity:.85}50%{opacity:1}}
+  #goal.done{color:#2a1c0e;background:linear-gradient(180deg,#ffe28a,#ffc247);box-shadow:none}
+  #relbar{
+    position:absolute;right:calc(var(--u)*4);bottom:calc(var(--u)*17);
+    display:flex;flex-direction:column;gap:calc(var(--u)*.9);align-items:flex-end;
+    max-height:calc(var(--u)*70);overflow:hidden;
+  }
+  .rel{
+    display:flex;align-items:center;gap:calc(var(--u)*1);
+    background:rgba(24,14,36,.72);
+    padding:calc(var(--u)*.6) calc(var(--u)*1.6) calc(var(--u)*.6) calc(var(--u)*.8);
+    border-radius:calc(var(--u)*1.2);
+    font-size:calc(var(--u)*2.8);font-weight:800;color:#e6dcf5;
+    box-shadow:inset 0 0 0 1px var(--rc,rgba(255,255,255,.16));
+  }
+  .rel canvas{width:calc(var(--u)*5.4);height:calc(var(--u)*5.4);image-rendering:pixelated}
+  .slot .mods{
+    position:absolute;left:calc(var(--u)*.5);bottom:calc(var(--u)*.4);
+    display:flex;gap:calc(var(--u)*.3);
+  }
+  .slot .mods i{
+    width:calc(var(--u)*1.6);height:calc(var(--u)*1.6);border-radius:50%;
+    background:var(--mc,#fff);display:block;
+  }
+
+  /* ---------------- overlays ---------------- */
+  .overlay{
+    position:absolute;inset:0;display:flex;flex-direction:column;
+    align-items:center;justify-content:center;gap:calc(var(--u)*5);
+    background:rgba(18,10,28,.86);
+    z-index:10;padding:calc(var(--u)*6);
+  }
+  .overlay.hidden{display:none}
+
+  /* title */
+  #title{background:linear-gradient(180deg, rgba(18,10,30,.9) 0%, rgba(18,10,30,.9) 52%, rgba(18,10,30,.12) 100%)}
+  .game-title{
+    margin:0;font-size:calc(var(--u)*17);line-height:1;
+    font-weight:900;letter-spacing:calc(var(--u)*1.2);
+    color:#fff4d8;
+    text-shadow:
+      0 calc(var(--u)*1.2) 0 #6b3aa0,
+      0 calc(var(--u)*2.4) 0 #3f2064,
+      0 calc(var(--u)*3.6) 0 #241038,
+      0 0 calc(var(--u)*12) rgba(255,180,120,.45);
+  }
+  .game-sub{
+    font-size:calc(var(--u)*4);letter-spacing:calc(var(--u)*1.6);
+    color:#c8b3ff;text-transform:uppercase;font-weight:700;opacity:.9;
+  }
+  .bigbtn{
+    position:relative;border:0;cursor:pointer;
+    font-family:inherit;font-weight:900;
+    font-size:calc(var(--u)*6.4);letter-spacing:calc(var(--u)*.8);
+    color:#4a2410;
+    padding:calc(var(--u)*3.4) calc(var(--u)*13);
+    background:linear-gradient(180deg,#ffd977,#ffab3d);
+    border-radius:calc(var(--u)*2.4);
+    box-shadow:
+      0 calc(var(--u)*1.6) 0 #b96a1c,
+      0 calc(var(--u)*2.6) 0 #7d4413,
+      0 calc(var(--u)*4) calc(var(--u)*8) rgba(255,140,60,.35),
+      inset 0 calc(var(--u)*.8) 0 rgba(255,255,255,.55);
+    transition:transform .08s, box-shadow .08s, filter .15s;
+  }
+  .bigbtn:hover{filter:brightness(1.07)}
+  .bigbtn:active{transform:translateY(calc(var(--u)*1.6));box-shadow:0 0 0 #b96a1c,0 calc(var(--u)*1) 0 #7d4413}
+  .bigbtn.ghost{
+    margin-top:calc(var(--u)*2.4);
+    background:linear-gradient(180deg,#6f5a9c,#4b3a70);
+    color:#eee2ff;
+    box-shadow:0 calc(var(--u)*1.6) 0 #33254d,0 calc(var(--u)*2.6) 0 #211734,0 calc(var(--u)*4) calc(var(--u)*8) rgba(120,90,200,.3);
+  }
+  .bigbtn.ghost:active{box-shadow:0 0 0 #33254d,0 calc(var(--u)*1) 0 #211734}
+  .howto{font-size:calc(var(--u)*3.8);color:#d8cbe8;line-height:1.9;text-align:center}
+  .howto b{color:#ffd166;font-weight:800}
+  .bestline{font-size:calc(var(--u)*4.4);color:#ffb3c7;font-weight:800;letter-spacing:1px}
+  .bestline span{color:#fff;}
+
+  /* level up */
+  #levelup{background:rgba(18,10,30,.72)}
+  .lv-head{
+    font-size:calc(var(--u)*8);font-weight:900;color:#ffe9a8;letter-spacing:2px;
+    text-shadow:0 calc(var(--u)*.8) 0 #5b2f7a, 0 0 calc(var(--u)*14) rgba(255,210,110,.6);
+    animation:headPulse 1.2s ease-in-out infinite;
+  }
+  @keyframes headPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.06)}}
+  .cards{display:flex;gap:calc(var(--u)*6);align-items:stretch}
+  .card{
+    width:calc(var(--u)*54);
+    background:linear-gradient(180deg,#3a2a52,#2a1c3c);
+    border-radius:calc(var(--u)*2);
+    padding:calc(var(--u)*3) calc(var(--u)*3) calc(var(--u)*3.4);
+    text-align:center;cursor:pointer;
+    display:flex;flex-direction:column;align-items:center;gap:calc(var(--u)*1.4);
+    box-shadow:
+      0 0 0 calc(var(--u)*1) var(--cc,#ffd166),
+      0 0 0 calc(var(--u)*2.6) rgba(0,0,0,.55),
+      0 calc(var(--u)*2) calc(var(--u)*6) rgba(0,0,0,.5);
+    transition:transform .12s ease, box-shadow .12s ease, filter .12s;
+    position:relative;overflow:hidden;
+  }
+  .card::before{
+    content:"";position:absolute;left:0;right:0;top:0;height:calc(var(--u)*1.4);
+    background:var(--cc,#ffd166);opacity:.9;
+  }
+  .card:hover{
+    transform:translateY(calc(var(--u)*-2.2)) scale(1.035);
+    box-shadow:
+      0 0 0 calc(var(--u)*1) var(--cc,#ffd166),
+      0 0 0 calc(var(--u)*2.6) rgba(0,0,0,.55),
+      0 0 calc(var(--u)*16) var(--cc,#ffd166),
+      0 calc(var(--u)*3) calc(var(--u)*8) rgba(0,0,0,.55);
+    filter:brightness(1.08);
+  }
+  .c-tag{
+    font-size:calc(var(--u)*3);font-weight:800;letter-spacing:1.5px;
+    padding:calc(var(--u)*.6) calc(var(--u)*2.4);border-radius:99px;
+    background:color-mix(in srgb, var(--cc) 26%, transparent);
+    color:var(--cc);margin-top:calc(var(--u)*1);
+  }
+  .c-icon{
+    width:calc(var(--u)*18);height:calc(var(--u)*18);image-rendering:pixelated;
+    margin:calc(var(--u)*1.4) 0;
+    filter:drop-shadow(0 calc(var(--u)*1.2) calc(var(--u)*1.4) rgba(0,0,0,.5));
+  }
+  .c-name{font-size:calc(var(--u)*5);font-weight:900;color:#fff5e2;letter-spacing:.5px}
+  .c-lv{font-size:calc(var(--u)*3.2);font-weight:800;color:var(--cc);letter-spacing:.5px}
+  .c-desc{font-size:calc(var(--u)*3.3);color:#d5c8e8;line-height:1.6;min-height:calc(var(--u)*7)}
+  .c-hint{
+    font-size:calc(var(--u)*2.8);color:#7ef0c0;line-height:1.4;
+    border-top:calc(var(--u)*.3) dashed rgba(126,240,192,.35);
+    padding-top:calc(var(--u)*.9);margin-top:calc(var(--u)*.4);
+  }
+  /* 3.0：卡片左上角的数字键提示，一眼知道按几 */
+  .c-key{
+    position:absolute;left:calc(var(--u)*1.6);top:calc(var(--u)*2.4);
+    width:calc(var(--u)*5.2);height:calc(var(--u)*5.2);border-radius:calc(var(--u)*1.2);
+    display:flex;align-items:center;justify-content:center;
+    background:rgba(0,0,0,.45);color:#fff;font-weight:900;font-size:calc(var(--u)*3.2);
+    box-shadow:inset 0 0 0 1px rgba(255,255,255,.22);
+    pointer-events:none;
+  }
+  /* 史诗 / 诅咒卡：边框呼吸，告诉玩家"这张不一样" */
+  .card.epic{animation:epicGlow 1.6s ease-in-out infinite}
+  @keyframes epicGlow{
+    0%,100%{box-shadow:0 0 0 calc(var(--u)*1) var(--cc),0 0 0 calc(var(--u)*2.6) rgba(0,0,0,.55),0 calc(var(--u)*2) calc(var(--u)*6) rgba(0,0,0,.5)}
+    50%{box-shadow:0 0 0 calc(var(--u)*1.4) var(--cc),0 0 0 calc(var(--u)*2.6) rgba(0,0,0,.55),0 0 calc(var(--u)*18) var(--cc)}
+  }
+  #comboTip{color:#ffd166;margin-bottom:calc(var(--u)*1.2);font-size:calc(var(--u)*3.2);max-width:calc(var(--u)*200);text-align:center;line-height:1.5}
+  .lv-hint{font-size:calc(var(--u)*3.2);color:#a99ac2;letter-spacing:1px}
+
+  /* pause & gameover */
+  .panel{
+    background:linear-gradient(180deg,#35264c,#241734);
+    border-radius:calc(var(--u)*3);
+    padding:calc(var(--u)*7) calc(var(--u)*9);
+    box-shadow:0 0 0 calc(var(--u)*1) #6b4d97, 0 calc(var(--u)*3) calc(var(--u)*12) rgba(0,0,0,.6);
+    text-align:center;max-width:88%;
+  }
+  .panel h2{
+    margin:0 0 calc(var(--u)*4);font-size:calc(var(--u)*9);font-weight:900;
+    color:#ffe9a8;letter-spacing:3px;
+    text-shadow:0 calc(var(--u)*.9) 0 #5b2f7a;
+  }
+  .statgrid{
+    display:grid;grid-template-columns:auto auto;gap:calc(var(--u)*2) calc(var(--u)*6);
+    font-size:calc(var(--u)*4);margin:0 auto calc(var(--u)*5);text-align:left;
+    width:calc(var(--u)*180);max-width:100%;
+  }
+  .statgrid .k{color:#a99ac2;font-weight:700}
+  .statgrid .v{color:#fff;font-weight:900;text-align:right;font-variant-numeric:tabular-nums}
+  .statgrid .v.hi{color:#ffd166}
+  .upline{display:flex;gap:calc(var(--u)*1.4);justify-content:center;flex-wrap:wrap;margin-bottom:calc(var(--u)*4);max-width:calc(var(--u)*230)}
+  .dmgrank{width:calc(var(--u)*190);max-width:100%;margin:0 auto calc(var(--u)*4);display:flex;flex-direction:column;gap:calc(var(--u)*1.1)}
+  .dmghd{font-size:calc(var(--u)*3);color:#a99ac2;font-weight:900;text-align:left;margin-bottom:calc(var(--u)*.4);letter-spacing:.05em}
+  .dmgrow{display:flex;align-items:center;gap:calc(var(--u)*1.6);font-size:calc(var(--u)*3)}
+  .dmgn{width:calc(var(--u)*34);flex:none;font-weight:900;text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .dmgtrack{flex:1;height:calc(var(--u)*1.8);background:rgba(255,255,255,.16);box-shadow:inset 0 0 0 1px rgba(255,255,255,.09);border-radius:999px;overflow:hidden}
+  .dmgtrack i{display:block;height:100%;border-radius:999px;box-shadow:0 0 6px currentColor}
+  .dmgv{width:calc(var(--u)*42);flex:none;text-align:right;color:#fff;font-weight:900;font-variant-numeric:tabular-nums}
+  .dmgv em{font-style:normal;font-weight:700;color:#a99ac2;font-size:.82em;margin-left:calc(var(--u)*.6)}
+  .mini{
+    display:flex;align-items:center;gap:calc(var(--u)*1.2);
+    background:rgba(255,255,255,.07);border-radius:calc(var(--u)*1.4);
+    padding:calc(var(--u)*.8) calc(var(--u)*2);
+    font-size:calc(var(--u)*3.2);color:#e6dcf5;font-weight:700;
+  }
+  .mini canvas{width:calc(var(--u)*6);height:calc(var(--u)*6);image-rendering:pixelated}
+  .mini i{font-style:normal;color:#ffd166}
+  #gameover{background:radial-gradient(circle at 50% 45%, rgba(90,30,50,.6), rgba(14,8,20,.94))}
+  #gameover h2{color:#ff9fb6;text-shadow:0 calc(var(--u)*.9) 0 #59153a}
+</style>
+</head>
+<body>
+<div id="stage">
+  <canvas id="game" width="640" height="360"></canvas>
+  <div id="lowhp"></div>
+
+  <div id="hud" class="hidden">
+    <div id="xpwrap"><div id="xpfill"></div></div>
+    <div id="topbar">
+      <div id="hpbox">
+        <span class="heart">♥</span>
+        <div class="hpcol">
+          <div id="hpbar"><div id="hpfill"></div></div>
+          <div class="rbrow">
+            <div class="rb" id="rbCharge" title="充能：满 100 触发超载，全武器齐射"><i></i></div>
+            <div class="rb off" id="rbShield" title="护盾：先于生命值吸收伤害"><i></i></div>
+          </div>
+        </div>
+        <span id="hptext">100/100</span>
+      </div>
+      <div id="killbox"><span class="skull">☠</span><span id="killnum">0</span></div>
+      <div id="timer">00:00</div>
+      <div id="lvbox">Lv.1</div>
+    </div>
+    <div id="perkbox"></div>
+    <div id="goal"></div>
+    <!-- 【4.1】怒气条已搬到人物脚下（见 70-render 的 drawPlayerRage），
+         不再占用底部的 UI 空间。 -->
+    <!-- 4.2：冲刺充能（灵光 / 破韧 / 夹击 全部已删除） -->
+    <div id="mechwrap">
+      <div id="dashpips" title="冲刺（空格 / Shift）：两段充能，冲刺中短暂无敌"><i></i><i></i></div>
+    </div>
+    <div id="invbar"></div>
+    <div id="relbar"></div>
+    <button id="mutebtn" title="静音 (M)">🔊</button>
+    <button id="pausebtn" title="暂停 (ESC)">❚❚</button>
+    <div id="toast"></div>
+  </div>
+
+  <div id="title" class="overlay">
+    <h1 class="game-title">拖鞋幸存者</h1>
+    <div class="game-sub">SLIPPER SURVIVOR <b style="color:#ffd166">4.1</b> · CLEAN RULES UPDATE</div>
+    <button class="bigbtn" id="startBtn">选 择 角 色</button>
+    <div class="howto">
+      <b>WASD / 方向键</b> 移动 · 武器<b>自动攻击</b> · <b>空格 / Shift</b> 冲刺<br>
+      <b>1 / 2 / 3</b> 选强化 · <b>ESC</b> 暂停 · <b>M</b> 静音<br>
+      <b>活到 10:00，打掉「拖鞋之王」</b>
+    </div>
+    <div class="bestline">最长存活：<span id="bestT">0:00</span> · 通关：<span id="clearT">0</span> 次</div>
+  </div>
+
+  <div id="charselect" class="overlay hidden">
+    <div class="cs-head">选 择 角 色</div>
+    <div class="cs-sub">每个角色的爽点不同，构筑方向也不同</div>
+    <div class="cs-grid" id="charGrid"></div>
+    <div class="cs-hint">角色只决定起点 · 中途可以往任何方向歪</div>
+  </div>
+
+  <div id="levelup" class="overlay hidden">
+    <div class="lv-head">⚡ 升级！</div>
+    <div class="cards" id="cards"></div>
+    <div class="lv-hint" id="comboTip"></div>
+    <div class="lv-hint">按 1 / 2 / 3 或点击卡片</div>
+  </div>
+
+  <div id="pausebox" class="overlay hidden">
+    <div class="panel">
+      <h2>暂 停</h2>
+      <div class="upline" id="pauseUp"></div>
+      <div class="statgrid" id="pauseStats"></div>
+      <button class="bigbtn" id="resumeBtn">继 续</button>
+      <button class="bigbtn" id="dieBtn">直接结束 · 看结算</button>
+    </div>
+  </div>
+
+  <div id="gameover" class="overlay hidden">
+    <div class="panel">
+      <h2 id="goTitle">你被吃掉了…</h2>
+      <div class="statgrid" id="goStats"></div>
+      <div class="upline" id="goUp"></div>
+      <div class="dmgrank" id="goDmg"></div>
+      <button class="bigbtn" id="restartBtn">再 来 一 局</button>
+      <button class="bigbtn ghost hidden" id="continueBtn">继 续 无 尽</button>
+    </div>
+  </div>
+</div>
+
+<script>
