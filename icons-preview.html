@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="zh-CN">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>拖鞋幸存者 · 图标预览</title>
+<style>
+  :root{color-scheme:dark;--ink:#11152f;--cream:#fff7d1;--pink:#ff3477;--lime:#d5ff31;--cyan:#29e7ff;--purple:#8154ff}
+  *{box-sizing:border-box}body{margin:0;min-height:100vh;background:radial-gradient(ellipse at 18% 5%,#302564,#11142e 62%),repeating-linear-gradient(135deg,#fff0 0 24px,#29e7ff0a 25px 28px);color:var(--cream);font:15px/1.5 "Microsoft YaHei","PingFang SC",system-ui,sans-serif}
+  main{max-width:980px;margin:auto;padding:44px 24px 56px}header{margin-bottom:30px}header small{color:var(--lime);font-weight:900;letter-spacing:.18em}h1{margin:7px 0;font-size:clamp(25px,5vw,39px);letter-spacing:.03em;text-shadow:3px 3px 0 var(--pink),6px 6px 0 var(--purple)}header p{margin:0;color:var(--cyan)}
+  h2{margin:30px 0 13px;font-size:15px;color:var(--lime);letter-spacing:.1em;text-transform:uppercase}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:13px}
+  .tile{display:flex;align-items:center;gap:14px;min-height:108px;padding:15px;border:2px solid #090c24;border-radius:9px;background:linear-gradient(145deg,#272452,#1a1d42);box-shadow:4px 5px 0 var(--pink),0 0 0 1px var(--cyan)}
+  .icon{flex:none;width:72px;height:72px;padding:5px;border:2px solid #11152f;border-radius:8px;background:var(--cyan);box-shadow:2px 2px 0 #080a1d;image-rendering:pixelated}
+  .tile:nth-child(4n+1) .icon{background:var(--lime)}.tile:nth-child(4n+2) .icon{background:#ffd844}.tile:nth-child(4n+3) .icon{background:#ff72a4}
+  .name{font-weight:900;font-size:15px;color:#fffbed}.kind{margin-top:3px;color:#29e7ff;font-size:12px}
+  footer{margin-top:28px;color:#d5ff31;font-size:13px}
+  iframe{position:fixed;left:-12000px;top:0;width:640px;height:360px;border:0}
+</style>
+<main>
+  <header><small>SLIPPER SURVIVOR · LOCAL ICON STUDY</small><h1>像素图标小样</h1><p>道具看轮廓，改造看动作；轮廓、材质和高光都与效果呼应。</p></header>
+  <h2>改造效果 · 重画</h2><section class="grid" id="mods"></section>
+  <h2>武器与道具</h2><section class="grid" id="items"></section>
+  <footer>图标取自本地游戏源码；预览不会影响游戏进度。</footer>
+</main>
+<iframe src="./index.html" title="游戏图标渲染器" aria-hidden="true"></iframe>
+<script>
+const groups={
+  items:[['slipper','飞拖鞋','weapon','#ff9dc0'],['banana','回旋香蕉','weapon','#ffd83d'],['dice','幸运骰子','weapon','#ffe066'],['crossbow','连发弩','weapon','#9fe0ff'],['cleaver','菜刀','weapon','#c9d4e2'],['pet','小狗','summon','#e6c17a'],['shield','护盾结晶','crystal','#9fe8ff'],['coil','铜线遗物','relic','#ffe066']],
+  mods:[['#scatter','散射','mod','#9fe0ff'],['#pierce','穿透','mod','#9fe0ff'],['#bounce','弹跳','mod','#9fe0ff'],['#split','分裂','mod','#c9b0ff'],['#burn','点燃','mod','#ff6b4d'],['#chill','冰缓','mod','#8fe8ff'],['#venom','淬毒','mod','#a6e05a'],['#volt','感电','mod','#ffe066'],['#blast','爆裂','mod','#ff9d4d'],['#heavy','重击','mod','#ff9d4d'],['#haste','加速','mod','#7ce3ff'],['#mark','标记','mod','#ff8fb0']]
+};
+function addCards(group){for(const [id,name,kind,color] of groups[group]){const card=document.createElement('article');card.className='tile';const c=document.createElement('canvas');c.width=c.height=16;c.className='icon';const ctx=c.getContext('2d');const seed=kind==='relic'||kind==='crystal'?'relic:'+name:null;previewFrame.contentWindow.__SS.drawIcon(ctx,id,seed,color);const text=document.createElement('div');text.innerHTML='<div class="name">'+name+'</div><div class="kind">'+kindLabel(kind)+'</div>';card.append(c,text);document.getElementById(group).append(card)}}
+function kindLabel(kind){return {weapon:'武器',summon:'召唤物',crystal:'结晶',relic:'遗物 · 独立印记',mod:'改造效果'}[kind]}
+const previewFrame=document.querySelector('iframe');previewFrame.addEventListener('load',()=>{try{addCards('items');addCards('mods')}catch(e){document.querySelector('header p').textContent='图标渲染遇到问题：'+e.message}});
+</script>

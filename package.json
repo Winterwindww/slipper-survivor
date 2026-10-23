@@ -7,7 +7,7 @@
   "scripts": {
     "build": "node tools/build.mjs",
     "check": "node tools/build.mjs --check",
-    "verify": "node tools/lint-data.mjs && node tools/verify-3.0.mjs && node tools/verify-2.6.mjs",
+    "verify": "node tools/lint-data.mjs && node tools/verify-3.0.mjs && node tools/verify-2.6.mjs && node tools/icon-audit.mjs",
     "gate": "node tools/funcgate.mjs",
     "sim": "node tools/sim.mjs",
     "sim:still": "node tools/sim.mjs --minutes 10 --still --trace",

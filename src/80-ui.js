@@ -308,6 +308,13 @@ function miniEl(kind, id, lv, mods){
 /* =========================================================
    角色选择
    ========================================================= */
+const CHAR_SELECT_COPY = {
+  ranger:{ blurb:'远程连射，越打越准。', perk:'投射武器额外 +1 弹道。' },
+  knight:{ blurb:'平底锅近战，挨打攒怒。', perk:'怒气更快，狂战更强。' },
+  engineer:{ blurb:'部署炮台，铺出火力网。', perk:'炮台上限 +2，彼此加速。' },
+  keeper:{ blurb:'召唤伙伴，组建小兽群。', perk:'宠物上限 +3。' },
+  chef:{ blurb:'冰火交替，打出元素反应。', perk:'多元素目标受到更多伤害。' }
+};
 function buildCharSelect(){
   const grid = $('charGrid');
   if(!grid) return;
@@ -321,12 +328,12 @@ function buildCharSelect(){
       '<div class="cs-top"><canvas width="54" height="54"></canvas>' +
       '<div><div class="cs-name">' + c.name + '</div>' +
       '<div class="cs-title">' + c.title + '</div></div></div>' +
-      '<div class="cs-blurb">' + c.blurb + '</div>' +
+      '<div class="cs-blurb">' + (CHAR_SELECT_COPY[id]?.blurb || c.blurb) + '</div>' +
       '<div class="cs-school">武器 · ' + charSchoolNames(c) + '</div>' +
       '<div class="cs-route">路线 · ' + (CHAR_ROUTES[c.id] || []).map(function(r){
         return ARCH[r] ? ARCH[r].name : r;
       }).join(' / ') + '</div>' +
-      '<div class="cs-perk"><b>' + c.perkName + '</b>：' + c.perkDesc + '</div>' +
+      '<div class="cs-perk"><b>' + c.perkName + '</b> · ' + (CHAR_SELECT_COPY[id]?.perk || c.perkDesc) + '</div>' +
       '<div class="cs-own">' + charOwnLine(c) + '</div>';
     drawCharPortrait(d.querySelector('canvas'), c);
     d.addEventListener('click', function(){ pickChar(id); });

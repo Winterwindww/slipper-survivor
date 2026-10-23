@@ -481,6 +481,76 @@
   #gameover{background:radial-gradient(circle at 50% 45%, rgba(90,30,50,.6), rgba(14,8,20,.94))}
   #gameover h2{color:#ff9fb6;text-shadow:0 calc(var(--u)*.9) 0 #59153a}
 </style>
+<style>
+  /* Neon arcade/comic theme: bright sticker accents against a deep arcade base. */
+  :root{--ink:#11152f;--cream:#fff7d1;--pink:#ff3477;--mint:#d5ff31;--yellow:#ffe231;--violet:#8154ff;--sky:#29e7ff}
+  html,body{background-color:#11142e;background-image:radial-gradient(circle at 20% 25%,#2b2268 0,transparent 36%),radial-gradient(circle at 82% 80%,#123e64 0,transparent 34%),repeating-linear-gradient(135deg,#fff0 0 22px,#29e7ff09 22px 25px);color:#fff7d1}
+  #stage{background:#171a36;box-shadow:0 0 0 4px #11152f,0 0 0 9px #29e7ff,0 0 0 13px #11152f,0 24px 65px #080a1cd9}
+  .overlay{background:rgba(14,17,48,.87);backdrop-filter:none}
+  #title{background:linear-gradient(180deg,#14183de8,#21194bf2 56%,#171a36dc)}
+  #title::before{content:"";position:absolute;inset:0;pointer-events:none;opacity:.23;background:repeating-linear-gradient(132deg,transparent 0 27px,#29e7ff 28px 30px,transparent 31px 57px);mask-image:linear-gradient(90deg,transparent,#000 35% 65%,transparent)}
+  .game-title{position:relative;color:#fffbed;transform:rotate(-2deg);-webkit-text-stroke:.45px #11152f;text-shadow:3px 3px 0 #ff3477,6px 6px 0 #8154ff,0 0 16px #29e7ff;letter-spacing:calc(var(--u)*.65)}
+  .game-title::before{content:"✦  ARCADE MAYHEM  ✦";display:block;width:max-content;margin:0 auto calc(var(--u)*1.6);padding:calc(var(--u)*.6) calc(var(--u)*2.5);border:2px solid #11152f;border-radius:999px;background:#d5ff31;color:#11152f;font-size:clamp(11px,calc(var(--u)*2.5),19px);line-height:1.3;letter-spacing:.15em;text-shadow:none;transform:rotate(2deg);box-shadow:3px 3px 0 #ff3477}
+  .game-sub{color:#29e7ff;letter-spacing:calc(var(--u)*.8);font-size:max(11px,calc(var(--u)*3.7));text-shadow:2px 2px 0 #11152f}
+  .game-sub b{color:#ffe231!important}
+  .bigbtn{border:3px solid #11152f;border-radius:calc(var(--u)*1.2);color:#11152f;background:linear-gradient(180deg,#fff067,#ffe231 70%,#ffc52e);transform:skew(-3deg) rotate(-1deg);box-shadow:0 calc(var(--u)*1.5) 0 #ff3477,0 calc(var(--u)*2.5) 0 #11152f,0 calc(var(--u)*3.4) calc(var(--u)*7) #090b20a8,inset 0 2px #fff7bd}
+  .bigbtn:hover{filter:saturate(1.3) brightness(1.08);transform:skew(-3deg) rotate(1deg) scale(1.04)}
+  .bigbtn:active{transform:skew(-3deg) translateY(calc(var(--u)*1.5));box-shadow:0 calc(var(--u)*.4) 0 #ff3477,0 calc(var(--u)*1) 0 #11152f}
+  .bigbtn.ghost{background:linear-gradient(180deg,#29e7ff,#21bce8);color:#11152f;box-shadow:0 calc(var(--u)*1.5) 0 #8154ff,0 calc(var(--u)*2.5) 0 #11152f,0 calc(var(--u)*4) calc(var(--u)*8) #080b2e}
+  .bigbtn.ghost:active{box-shadow:0 calc(var(--u)*.4) 0 #8154ff,0 calc(var(--u)*1) 0 #11152f}
+  .howto{color:#fffbed;text-shadow:2px 2px 0 #11152f;line-height:1.85;font-size:max(12px,calc(var(--u)*3.8))}
+  .howto b{color:#d5ff31}
+  .bestline{color:#ff76a4;text-shadow:2px 2px 0 #11152f;font-size:max(12px,calc(var(--u)*4.4))}.bestline span{color:#fff7d1}
+  #charselect{background:radial-gradient(ellipse at 50% 8%,#34306f,#1a1c42 66%,#151831);color:#fff7d1;gap:calc(var(--u)*1.3);padding:calc(var(--u)*3.5);overflow-y:auto;justify-content:flex-start}
+  .cs-head{color:#ffe231;-webkit-text-stroke:.35px #11152f;text-shadow:3px 3px 0 #ff3477,5px 5px 0 #11152f;letter-spacing:calc(var(--u)*.35);font-size:clamp(23px,calc(var(--u)*7.2),36px);margin-top:auto;transform:rotate(-1deg)}
+  .cs-sub{color:#29e7ff;font-size:max(11px,calc(var(--u)*3.2));font-weight:800;text-shadow:1px 1px 0 #11152f}
+  .cs-grid{gap:calc(var(--u)*2.5);width:min(calc(var(--u)*307),96%);flex:none}
+  .cs-card{background:linear-gradient(155deg,#f7f5ff,#e8e8ff);border:2px solid #11152f;border-radius:calc(var(--u)*.8);padding:calc(var(--u)*1.2) calc(var(--u)*1.5);box-shadow:4px 5px 0 #080b24;gap:calc(var(--u)*.45);transform:rotate(-.45deg)}
+  .cs-card:nth-child(even){transform:rotate(.55deg)}
+  .cs-card::before{height:calc(var(--u)*1.1);opacity:1}
+  .cs-card:hover{transform:translateY(calc(var(--u)*-1.4)) rotate(1.4deg) scale(1.015);box-shadow:4px 6px 0 #11152f,0 0 0 2px var(--cc),0 0 18px color-mix(in srgb,var(--cc) 70%,transparent);filter:saturate(1.12)}
+  .cs-top{gap:calc(var(--u)*1);margin-top:calc(var(--u)*.45)}
+  .cs-top canvas{width:calc(var(--u)*13);height:calc(var(--u)*13);flex:none;background:var(--cc);border:2px solid #11152f;border-radius:calc(var(--u)*.6);image-rendering:auto;box-shadow:2px 2px 0 #11152f}
+  .cs-name{color:#11152f;font-size:max(13px,calc(var(--u)*4))}.cs-title{font-size:max(10px,calc(var(--u)*2.4));letter-spacing:.55px;color:#5635c9}
+  .cs-blurb{color:#29264b;font-size:max(10px,calc(var(--u)*2.5));min-height:0;line-height:1.25;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+  .cs-school{color:#4230ba;font-size:max(10px,calc(var(--u)*2.3));font-weight:900;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .cs-perk{color:#171a37;border-color:#9081ef;font-size:max(10px,calc(var(--u)*2.4));line-height:1.25;padding-top:calc(var(--u)*.55);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+  .cs-perk b{color:#c52065}.cs-own,.cs-route{display:none}
+  .cs-hint{color:#d5ff31;font-size:max(10px,calc(var(--u)*2.4));font-weight:900;flex:none;margin-bottom:auto;text-shadow:1px 1px 0 #11152f}
+  #levelup{background:radial-gradient(ellipse at 50% 40%,#312c70ed,#10142ff5 78%)}
+  #levelup::before{content:"";position:absolute;inset:0;pointer-events:none;opacity:.2;background:repeating-linear-gradient(135deg,transparent 0 19px,#29e7ff 20px 21px,transparent 22px 42px)}
+  .lv-head{color:#ffe231;-webkit-text-stroke:.35px #11152f;text-shadow:3px 3px 0 #ff3477,6px 6px 0 #11152f;transform:rotate(-1.5deg)}
+  .card{background:linear-gradient(155deg,#fffced,#e8edff 75%,#dbe0ff);border:2px solid #11152f;border-radius:calc(var(--u)*1);box-shadow:4px 5px 0 #0b0d21,0 0 0 2px var(--cc,#ffe231);transform:rotate(-.8deg)}
+  .card:nth-child(even){transform:rotate(.8deg)}
+  .card::before{height:calc(var(--u)*1.5);opacity:1}
+  .card:hover{transform:translateY(calc(var(--u)*-2.2)) rotate(1.1deg) scale(1.035);box-shadow:4px 7px 0 #0b0d21,0 0 0 2px var(--cc),0 0 22px color-mix(in srgb,var(--cc) 78%,transparent);filter:saturate(1.12)}
+  .c-tag{background:var(--cc);color:#11152f;border:1.5px solid #11152f;box-shadow:2px 2px 0 #11152f}
+  .c-icon{background:var(--cc);border:2px solid #11152f;border-radius:calc(var(--u)*1);padding:calc(var(--u)*1.4);box-shadow:3px 3px 0 #11152f,0 0 12px color-mix(in srgb,var(--cc) 55%,transparent);transform:rotate(-2deg)}
+  .c-name{color:#11152f}.c-desc{color:#272641;font-size:max(12px,calc(var(--u)*3.3))}.c-hint{color:#21664e;border-color:#41af82}
+  .c-key{background:#ffe231;border:2px solid #11152f;box-shadow:2px 2px 0 #11152f;color:#11152f}
+  .card.epic{animation:arcadePulse .9s steps(2,end) infinite}
+  @keyframes arcadePulse{0%,100%{box-shadow:4px 5px 0 #0b0d21,0 0 0 2px var(--cc),0 0 7px var(--cc)}50%{box-shadow:4px 5px 0 #0b0d21,0 0 0 4px #ffe231,0 0 22px var(--cc)}}
+  #comboTip{color:#29e7ff;text-shadow:1px 1px #11152f}.lv-hint{color:#fff7d1;text-shadow:1px 1px #11152f}
+  .panel{background:linear-gradient(145deg,#29255c,#171a3d 75%);border:3px solid #11152f;border-radius:calc(var(--u)*1.2);padding:calc(var(--u)*5) calc(var(--u)*6);box-shadow:5px 6px 0 #ff3477,0 0 0 3px #29e7ff,0 12px 28px #080a1caa;color:#fff7d1;transform:rotate(-.5deg)}
+  .panel h2{color:#ffe231;text-shadow:3px 3px 0 #ff3477,5px 5px 0 #11152f}
+  .statgrid .k{color:#29e7ff}.statgrid .v{color:#fffbed}.statgrid .v.hi{color:#d5ff31}
+  .mini{background:#27295a;border:1px solid #29e7ff;border-radius:calc(var(--u)*.8);color:#fff7d1}.mini i{color:#ffe231}
+  .dmghd{color:#29e7ff}.dmgtrack{background:#343360;border:1px solid #080b24}.dmgv{color:#fff7d1}.dmgv em{color:#29e7ff}
+  #pausebox,#gameover{background:rgba(12,15,42,.87)}
+  #gameover h2{color:#ff5d87;text-shadow:3px 3px 0 #11152f}
+  #hpbox,#killbox{background:#11152fe8;border:1px solid #29e7ff;box-shadow:2px 3px 0 #0a0c22}
+  #timer{color:#fff7d1;text-shadow:2px 3px 0 #11152f,0 0 10px #29e7ff}
+  #lvbox{border:2px solid #11152f;box-shadow:2px 3px 0 #ff3477}
+  .slot{background:#161a3cf2;border:1px solid #29e7ff;box-shadow:2px 2px 0 #0a0c22}
+  .rel{background:#171a3fee;border:1px solid #29e7ff;color:#fff7d1;box-shadow:2px 2px 0 #0a0c22}
+  #perkbox,#goal{background:#161a3feF;border:1px solid #29e7ff;box-shadow:2px 2px 0 #090b21;color:#fff7d1}
+  #perkbox{color:#d5ff31}#goal b{color:#ffe231}
+  #goal.done{background:#d5ff31;border-color:#11152f;color:#11152f}
+  #mutebtn,#pausebtn{background:#191d47;border:2px solid #29e7ff;border-radius:calc(var(--u)*.8);box-shadow:2px 3px 0 #0a0c22;color:#ffe231}
+  .cs-hint,.lv-hint{text-align:center}
+  @media(max-aspect-ratio:4/3){.cs-grid{width:min(calc(var(--u)*255),96%);gap:calc(var(--u)*1.4)}.cs-card{padding:calc(var(--u)*1.5)}.cs-blurb{line-height:1.32}.cs-perk{line-height:1.25}}
+  @media(prefers-reduced-motion:reduce){.card,.cs-card,.bigbtn{transition:none;transform:none}.card.epic,.lv-head{animation:none}}
+</style>
 </head>
 <body>
 <div id="stage">
@@ -522,7 +592,7 @@
 
   <div id="title" class="overlay">
     <h1 class="game-title">拖鞋幸存者</h1>
-    <div class="game-sub">SLIPPER SURVIVOR <b style="color:#ffd166">4.1</b> · CLEAN RULES UPDATE</div>
+    <div class="game-sub">SLIPPER SURVIVOR <b style="color:#ffd166">5.0</b> · FULL SCREEN MAYHEM</div>
     <button class="bigbtn" id="startBtn">选 择 角 色</button>
     <div class="howto">
       <b>WASD / 方向键</b> 移动 · 武器<b>自动攻击</b> · <b>空格 / Shift</b> 冲刺<br>
@@ -2074,11 +2144,8 @@ SPR.mushroom = reg([
         火焰就是火焰、炮台就是炮台。同类物品共用同一个形状是对的，
         玩家需要"一眼看出这是元素件"，而不是背 151 个图标。
 
-     2) 符文图标 drawRune() —— 给武器改造卡用。
-        30 张改造卡原来全部套用武器自己的图标，于是升级界面上
-        三张卡画着同一个东西，玩家根本分不清哪张是"点燃"、哪张是"弹跳"。
-        现在每张改造卡 = 3 种外框 × 10 种内符 = 30 个互不相同的符文，
-        颜色跟着改造类型走。
+     2) 改造图标 drawRune() —— 每张卡使用与效果相符的轮廓，
+        如弹射弹丸、击中的盾牌、火焰、雪花、毒瓶、闪电和重锤。
 
      3) 角标 stampMark() —— 给遗物用。
         同一个家族（比如 13 件"护甲/反伤"件）共用形状，
@@ -2100,57 +2167,186 @@ function iconHash(s){
 function stampMark(g, seed, color){
   const h = iconHash(String(seed));
   const corner = h % 4;
-  const kind = (h >>> 3) % 6;
-  /* 贴在四个**最外角**，尽量不压住主体的像素画 */
-  const ox = (corner === 1 || corner === 3) ? 11 : 0;
-  const oy = (corner >= 2) ? 11 : 0;
+  const kind = (h >>> 3) % 8;
+  /* 将同一形状的遗物用不同印记标识，印记至少有 6×6，避免旧的
+     5px 小字章缩放后只剩色点。 */
+  const ox = (corner === 1 || corner === 3) ? 10 : 0;
+  const oy = (corner >= 2) ? 10 : 0;
   /* 先铺一层暗底，保证角标在任何底色上都读得出来 */
   g.fillStyle = 'rgba(12,8,20,.88)';
-  g.fillRect(ox, oy, 5, 5);
+  g.fillRect(ox, oy, 6, 6);
   const R = (x, y, w, hh, c) => { g.fillStyle = c; g.fillRect(ox + x, oy + y, w, hh); };
   const c = color || '#ffe066';
-  if(kind === 0){ R(1, 1, 3, 3, c); }
-  else if(kind === 1){ R(0, 0, 5, 1, c); R(0, 4, 5, 1, c); }
-  else if(kind === 2){ R(0, 0, 1, 5, c); R(4, 0, 1, 5, c); }
-  else if(kind === 3){ R(0, 0, 1, 1, c); R(2, 2, 1, 1, c); R(4, 4, 1, 1, c); }
-  else if(kind === 4){ R(2, 0, 1, 5, c); R(0, 2, 5, 1, c); }
-  else { R(0, 1, 5, 1, c); R(0, 3, 5, 1, c); R(1, 0, 1, 5, c); }
+  if(kind === 0){ R(1, 1, 4, 4, c); }
+  else if(kind === 1){ R(0, 0, 6, 1, c); R(0, 5, 6, 1, c); }
+  else if(kind === 2){ R(0, 0, 1, 6, c); R(5, 0, 1, 6, c); }
+  else if(kind === 3){ R(0, 0, 2, 2, c); R(4, 0, 2, 2, c); R(2, 4, 2, 2, c); }
+  else if(kind === 4){ R(2, 0, 2, 6, c); R(0, 2, 6, 2, c); }
+  else if(kind === 5){ R(0, 0, 2, 2, c); R(4, 0, 2, 2, c); R(0, 4, 2, 2, c); R(4, 4, 2, 2, c); }
+  else if(kind === 6){ R(0, 1, 6, 1, c); R(0, 4, 6, 1, c); R(1, 0, 1, 6, c); R(4, 0, 1, 6, c); }
+  else { R(2, 0, 2, 2, c); R(0, 2, 6, 2, c); R(2, 4, 2, 2, c); }
 }
 
-/* ---- 符文：给改造卡用的 30 个互不相同的图案 ---- */
-const RUNE_GLYPHS = [
-  /* 0 实心点 */  [[1,1,3,3]],
-  /* 1 十字 */    [[2,1,1,4],[1,2,4,1]],
-  /* 2 斜叉 */    [[1,1,1,1],[2,2,1,1],[3,3,1,1],[3,1,1,1],[2,2,1,1],[1,3,1,1]],
-  /* 3 三点 */    [[1,1,1,1],[3,1,1,1],[2,3,1,1]],
-  /* 4 上三角 */  [[2,1,1,1],[1,2,3,1],[0,3,5,1]],
-  /* 5 下三角 */  [[0,1,5,1],[1,2,3,1],[2,3,1,1]],
-  /* 6 双横 */    [[0,1,5,1],[0,3,5,1]],
-  /* 7 闪电 */    [[3,0,2,1],[2,1,2,1],[1,2,3,1],[1,3,2,1],[0,4,2,1]],
-  /* 8 圆环 */    [[1,0,3,1],[0,1,1,3],[4,1,1,3],[1,4,3,1]],
-  /* 9 箭头 */    [[2,0,1,2],[1,1,1,1],[3,1,1,1],[2,2,1,3]]
-];
+/* 每张改造卡对应明确的动作或物件；相近效果可以共用物件，
+   但加上方向、数量或命中状态的细节来表达它自己的作用。 */
+const MOD_ICON_SHAPES = {
+  scatter:'fan', flank:'flank', pierce:'pierce', bounce:'bounce', split:'split',
+  blast:'blast', burn:'flame', chill:'snowflake', venom:'potion', volt:'lightning',
+  haste:'stopwatch', heavy:'hammer', knock:'fist', reach:'spear', size:'expand',
+  crit:'bullseye', bleed:'bleed', combo:'twinblades', echo:'echo', count:'pellets',
+  spread:'spread', detonate:'bomb', chainkill:'chain', momentum:'momentum',
+  overload:'overload', shatter:'shatter', swift:'boot', ragefuel:'rage-shot',
+  chargeup:'battery', bloodpact:'blood-shot', opener:'opener', execute:'execute',
+  longshot:'rifle', hunter:'crosshair', splash:'impact', mark:'mark'
+};
+
 function drawRune(g, key){
-  const h = iconHash(String(key));
-  const glyph = RUNE_GLYPHS[h % RUNE_GLYPHS.length];
-  const frame = (h >>> 5) % 3;
+  const shape = MOD_ICON_SHAPES[key];
+  if(!shape) return;
   const col = MOD_RUNE_COL[key] || '#c9b0ff';
-  const dark = 'rgba(10,6,18,.82)';
-  /* 外框：方形 / 六边形 / 菱形，各一种 */
-  g.fillStyle = dark;
-  if(frame === 0) g.fillRect(1, 1, 14, 14);
-  else if(frame === 1){ g.fillRect(3, 0, 10, 16); g.fillRect(1, 2, 14, 12); }
-  else { for(let i = 0; i < 7; i++) g.fillRect(1 + i, 1 + i, 14 - i * 2, 1), g.fillRect(1 + i, 15 - i, 14 - i * 2, 1); }
-  /* 框线 */
-  g.fillStyle = col;
-  if(frame === 0){ g.fillRect(1, 1, 14, 1); g.fillRect(1, 14, 14, 1); g.fillRect(1, 1, 1, 14); g.fillRect(14, 1, 1, 14); }
-  else if(frame === 1){ g.fillRect(3, 0, 10, 1); g.fillRect(3, 15, 10, 1); g.fillRect(1, 2, 1, 12); g.fillRect(14, 2, 1, 12); }
-  else { g.fillRect(7, 1, 2, 1); g.fillRect(3, 3, 2, 1); g.fillRect(11, 3, 2, 1); g.fillRect(1, 7, 2, 2); g.fillRect(13, 7, 2, 2); }
-  /* 内符：按 2 倍像素放大，16x16 上也读得清 */
-  g.fillStyle = '#fff6e6';
-  for(let i = 0; i < glyph.length; i++){
-    const b = glyph[i];
-    g.fillRect(3 + b[0] * 2, 2 + b[1] * 2, b[2] * 2, b[3] * 2);
+  const ink = '#493432', cream = '#fff4d9', gold = '#ffd166', red = '#ed7668';
+  const R = (x,y,w,h,c) => { g.fillStyle = c; g.fillRect(x,y,w,h); };
+  const L = (x0,y0,x1,y1,c) => {
+    let x=x0,y=y0,dx=Math.abs(x1-x0),sx=x0<x1?1:-1,dy=-Math.abs(y1-y0),sy=y0<y1?1:-1,err=dx+dy;
+    while(true){R(x,y,1,1,c);if(x===x1&&y===y1)break;const e=2*err;if(e>=dy){err+=dy;x+=sx}if(e<=dx){err+=dx;y+=sy}}
+  };
+  const bullet = (x,y,c) => {
+    R(x,y+1,7,4,ink); R(x+1,y+2,5,2,c); R(x+6,y,3,6,ink);
+    R(x+7,y+1,1,4,gold); R(x+2,y+2,2,1,cream);
+  };
+  const miniBullet = (x,y,c) => {
+    R(x,y+1,4,2,ink); R(x+1,y+1,2,1,c); R(x+3,y,3,4,ink); R(x+4,y+1,1,2,gold);
+  };
+  const circle = (cx,cy,r,c) => {
+    for(let y=-r;y<=r;y++){const w=Math.round(Math.sqrt(r*r-y*y));R(cx-w,cy+y,w*2+1,1,c)}
+  };
+  const ray = (cx,cy,dx,dy,len,c) => L(cx,cy,cx+dx*len,cy+dy*len,c);
+  const burst = (cx,cy,c) => {
+    for(const [dx,dy,len] of [[0,-1,4],[1,-1,3],[1,0,4],[1,1,3],[0,1,4],[-1,1,3],[-1,0,4],[-1,-1,3]]) ray(cx,cy,dx,dy,len,ink);
+    circle(cx,cy,3,c); R(cx-1,cy-1,3,3,gold); R(cx,cy,1,1,cream);
+  };
+  const flame = (x,y,c) => {
+    R(x+3,y,3,2,ink); R(x+2,y+2,5,2,ink); R(x+1,y+4,8,3,ink);
+    R(x,y+7,10,3,ink); R(x+2,y+10,6,2,ink); R(x+4,y+12,3,1,ink);
+    R(x+3,y+2,2,3,gold); R(x+2,y+5,6,4,c); R(x+4,y+7,3,4,gold); R(x+5,y+9,1,2,cream);
+  };
+  const target = (cx,cy,c) => {
+    R(cx-1,cy-6,3,3,ink); R(cx-1,cy+4,3,3,ink); R(cx-6,cy-1,3,3,ink); R(cx+4,cy-1,3,3,ink);
+    R(cx,cy-5,1,2,c); R(cx,cy+4,1,2,c); R(cx-5,cy,2,1,c); R(cx+4,cy,2,1,c);
+    R(cx-3,cy-3,7,7,ink); R(cx-2,cy-2,5,5,c); R(cx-1,cy-1,3,3,cream); R(cx,cy,1,1,red);
+  };
+
+  switch(shape){
+    case 'fan':
+      miniBullet(7,1,col); miniBullet(2,6,gold); miniBullet(7,11,col);
+      R(1,5,2,1,ink); R(4,4,2,1,ink); R(1,9,2,1,ink); R(4,10,2,1,ink); break;
+    case 'flank':
+      bullet(6,1,col); L(5,3,2,6,ink); L(2,6,0,8,ink);
+      R(7,7,2,2,ink); R(8,8,1,1,cream);
+      R(0,8,2,2,ink); R(1,8,1,1,col); L(3,9,6,12,ink); bullet(6,10,gold); break;
+    case 'pierce':
+      R(1,6,2,5,ink); R(2,7,2,3,col); R(3,8,1,1,cream);
+      R(3,8,8,2,ink); R(5,9,6,1,gold); R(10,6,4,6,ink); R(11,7,2,4,col); R(13,8,2,2,ink); R(14,9,1,1,cream); break;
+    case 'bounce':
+      circle(4,10,3,ink); circle(4,10,2,gold); R(3,8,2,1,cream);
+      R(7,9,6,1,col); R(12,4,1,6,col); R(8,3,5,1,col);
+      R(12,2,1,2,ink); R(10,3,3,1,ink); R(14,4,1,7,ink);
+      R(10,5,2,1,cream); R(8,7,2,1,gold); break;
+    case 'split':
+      bullet(1,5,col); L(7,7,10,3,ink); L(7,7,12,7,ink); L(7,7,10,12,ink);
+      R(10,1,3,4,ink); R(11,2,1,2,gold); R(12,6,3,4,ink); R(13,7,1,2,cream); R(10,11,3,4,ink); R(11,12,1,2,col); break;
+    case 'blast': burst(7,7,col); R(6,5,3,5,ink); R(7,6,1,3,cream); break;
+    case 'flame': flame(3,1,col); break;
+    case 'snowflake':
+      L(7,1,7,14,ink); L(1,7,14,7,ink); L(3,3,12,12,ink); L(12,3,3,12,ink);
+      L(7,2,5,4,col); L(7,2,9,4,col); L(7,13,5,11,col); L(7,13,9,11,col);
+      L(2,7,4,5,col); L(2,7,4,9,col); L(13,7,11,5,col); L(13,7,11,9,col);
+      R(6,6,3,3,cream); break;
+    case 'potion':
+      R(5,1,5,2,ink); R(6,3,3,3,ink); R(4,5,7,1,ink); R(3,6,9,7,ink); R(4,13,7,2,ink);
+      R(6,2,3,1,cream); R(7,4,1,2,gold); R(5,7,6,5,col); R(6,7,3,2,'#d6ff9e'); R(5,12,5,1,gold); break;
+    case 'lightning':
+      L(9,0,4,7,ink); L(4,7,9,7,ink); L(9,7,5,15,ink);
+      L(8,1,5,6,gold); L(5,8,8,8,gold); L(8,8,6,13,cream);
+      R(1,4,2,1,col); R(0,10,2,1,col); R(12,3,2,1,gold); break;
+    case 'stopwatch':
+      R(6,1,4,2,ink); R(7,0,2,2,gold); R(3,4,10,9,ink); R(4,5,8,7,cream);
+      L(8,6,8,9,col); L(8,9,11,10,col); R(5,14,2,1,gold); R(10,14,2,1,gold); break;
+    case 'hammer':
+      L(6,7,12,14,ink); L(7,7,13,13,'#b98649');
+      R(2,2,10,5,ink); R(1,4,12,3,col); R(4,1,6,2,ink); R(5,2,4,1,cream); R(6,7,2,2,ink); break;
+    case 'fist':
+      R(5,4,8,7,ink); R(3,6,4,5,ink); R(6,3,2,3,ink); R(9,2,2,4,ink); R(12,4,2,3,ink);
+      R(6,5,6,5,col); R(4,7,2,3,gold); R(6,4,1,2,cream); R(8,12,4,2,ink); R(9,13,3,1,col);
+      L(1,3,3,4,gold); L(0,9,2,9,gold); break;
+    case 'spear':
+      L(2,13,12,3,ink); L(3,13,13,4,'#9b6d46');
+      R(10,1,4,4,ink); R(11,1,3,2,cream); R(12,3,2,2,col); R(9,4,3,3,ink); R(9,5,2,1,gold);
+      R(1,12,3,3,ink); break;
+    case 'expand':
+      R(6,6,4,4,ink); R(7,7,2,2,col);
+      L(7,6,7,1,ink); L(7,1,5,3,col); L(7,1,9,3,col);
+      L(9,9,14,9,ink); L(14,9,12,7,col); L(14,9,12,11,col);
+      L(7,9,2,9,ink); L(2,9,4,7,col); L(2,9,4,11,col);
+      L(9,7,9,2,ink); L(9,2,7,4,col); L(9,2,11,4,col); break;
+    case 'bullseye': target(7,8,col); R(5,1,5,2,gold); R(6,0,3,1,gold); break;
+    case 'bleed':
+      R(7,1,3,2,ink); R(5,3,7,3,ink); R(4,6,9,3,ink); R(5,9,7,3,ink); R(7,12,4,2,ink); R(8,14,2,1,ink);
+      R(7,3,4,3,red); R(6,7,6,4,col); R(8,11,3,2,red); R(7,5,2,1,cream); L(12,2,14,0,gold); break;
+    case 'twinblades':
+      L(1,12,8,4,ink); L(2,12,9,5,cream); L(4,14,2,12,ink); L(3,13,5,15,ink);
+      L(8,12,14,3,ink); L(9,12,14,4,cream); L(10,14,8,12,ink); L(13,13,15,11,ink);
+      R(7,7,3,2,gold); break;
+    case 'echo':
+      R(1,5,7,5,'#b7dff0'); R(2,6,4,2,cream); R(6,4,3,7,'#b7dff0');
+      R(7,3,7,6,ink); R(8,4,5,4,col); R(12,2,2,8,ink); R(13,3,1,5,gold);
+      R(2,12,2,2,gold); R(4,14,2,1,gold); break;
+    case 'pellets':
+      circle(4,4,2,ink); circle(4,4,1,gold); circle(11,4,2,ink); circle(11,4,1,col);
+      circle(7,10,3,ink); circle(7,10,2,col); R(6,8,2,1,cream); R(11,10,2,2,gold); R(2,10,2,2,gold); break;
+    case 'spread':
+      flame(0,3,col); circle(12,3,2,ink); circle(12,3,1,gold); circle(13,8,2,ink); circle(13,8,1,col); circle(11,13,2,ink); circle(11,13,1,gold);
+      L(7,7,10,4,col); L(7,9,10,12,col); break;
+    case 'bomb':
+      circle(7,9,5,ink); circle(7,9,4,col); R(6,6,3,6,'#b84d42'); R(7,7,1,3,gold); R(6,3,3,2,ink); L(8,4,11,1,ink);
+      R(11,0,2,2,gold); R(13,2,2,2,red); R(9,1,2,1,cream); R(3,12,3,2,ink); R(10,12,3,2,ink); break;
+    case 'chain':
+      circle(3,4,2,ink); circle(3,4,1,col); circle(12,11,2,ink); circle(12,11,1,gold);
+      L(5,5,8,7,col); L(8,7,10,9,ink); L(7,6,10,8,cream); L(9,7,12,4,gold); R(11,3,4,1,ink); break;
+    case 'momentum':
+      R(2,3,8,8,ink); R(3,4,5,5,col); R(7,9,5,4,ink); R(8,10,3,2,gold);
+      R(1,12,6,2,ink); R(0,14,5,1,col); L(9,5,14,2,gold); L(10,8,15,6,gold); break;
+    case 'overload':
+      R(2,3,11,11,ink); R(4,5,7,7,col); R(5,4,4,1,gold); R(5,2,4,2,ink); R(6,1,2,1,gold);
+      L(9,5,6,9,gold); L(6,9,9,9,gold); L(9,9,7,12,cream); R(13,6,2,2,red); break;
+    case 'shatter':
+      R(5,1,6,3,ink); R(3,4,10,7,ink); R(5,11,6,3,ink); R(6,3,4,2,col); R(4,5,8,5,'#b7e9f4'); R(6,10,5,2,col);
+      L(9,4,7,7,ink); L(7,7,9,8,ink); L(9,8,6,12,ink); L(2,3,4,1,gold); L(12,13,14,14,gold); break;
+    case 'boot':
+      R(4,2,4,7,ink); R(6,7,3,3,ink); R(8,9,5,2,ink); R(11,10,3,3,ink); R(3,11,11,3,ink); R(2,13,13,2,ink);
+      R(5,3,2,5,cream); R(7,9,4,1,col); R(4,12,9,1,gold); L(1,5,3,4,gold); L(0,8,2,7,gold); break;
+    case 'rage-shot': bullet(2,7,col); flame(7,1,red); break;
+    case 'battery':
+      R(2,4,12,9,ink); R(4,6,8,5,'#f2cf72'); R(5,2,6,2,ink); R(6,3,4,2,gold);
+      L(9,6,7,9,col); L(7,9,9,9,col); L(9,9,8,11,ink); R(3,14,2,1,ink); R(12,14,2,1,ink); break;
+    case 'blood-shot': bullet(1,7,col); R(9,2,3,2,ink); R(7,4,7,3,ink); R(8,7,6,3,ink); R(9,10,4,2,ink); R(10,12,2,2,ink); R(10,4,4,2,red); R(9,7,4,2,col); R(10,9,3,2,red); break;
+    case 'opener':
+      target(7,8,col); R(0,1,5,2,gold); R(0,1,2,5,gold); R(11,1,5,2,gold); R(14,1,2,5,gold);
+      R(0,13,5,2,gold); R(0,10,2,5,gold); R(11,13,5,2,gold); R(14,10,2,5,gold); break;
+    case 'execute':
+      L(12,1,7,8,ink); L(7,8,5,5,ink); L(6,4,9,8,red); L(7,3,10,7,cream); R(2,12,8,2,ink); R(4,14,5,1,ink); R(5,13,3,1,gold); break;
+    case 'rifle':
+      R(1,7,10,3,ink); R(3,6,7,1,col); R(11,8,4,1,ink); R(14,7,2,3,ink); R(5,10,3,3,ink); R(6,11,1,2,'#b98649');
+      R(2,8,7,1,cream); R(4,5,2,2,ink); R(5,4,2,1,gold); R(12,5,2,1,gold); R(14,4,2,3,col); break;
+    case 'crosshair':
+      target(7,8,col); L(7,0,7,4,gold); L(7,12,7,15,gold); L(0,8,3,8,gold); L(11,8,15,8,gold);
+      R(4,6,2,2,ink); R(10,6,2,2,ink); R(5,10,5,1,ink); R(6,10,3,1,cream); break;
+    case 'impact':
+      burst(7,8,col); R(6,7,3,3,ink); R(7,8,1,1,cream);
+      L(1,2,3,4,gold); L(0,8,2,8,gold); L(2,13,4,12,gold); L(12,3,14,1,gold); L(13,12,15,14,gold); break;
+    case 'mark':
+      target(7,8,red); R(10,1,4,4,ink); R(11,2,2,2,gold); R(12,3,1,1,red);
+      L(11,5,9,7,ink); R(10,12,4,2,red); R(11,14,2,1,ink); break;
   }
 }
 
@@ -13743,6 +13939,13 @@ function miniEl(kind, id, lv, mods){
 /* =========================================================
    角色选择
    ========================================================= */
+const CHAR_SELECT_COPY = {
+  ranger:{ blurb:'远程连射，越打越准。', perk:'投射武器额外 +1 弹道。' },
+  knight:{ blurb:'平底锅近战，挨打攒怒。', perk:'怒气更快，狂战更强。' },
+  engineer:{ blurb:'部署炮台，铺出火力网。', perk:'炮台上限 +2，彼此加速。' },
+  keeper:{ blurb:'召唤伙伴，组建小兽群。', perk:'宠物上限 +3。' },
+  chef:{ blurb:'冰火交替，打出元素反应。', perk:'多元素目标受到更多伤害。' }
+};
 function buildCharSelect(){
   const grid = $('charGrid');
   if(!grid) return;
@@ -13756,12 +13959,12 @@ function buildCharSelect(){
       '<div class="cs-top"><canvas width="54" height="54"></canvas>' +
       '<div><div class="cs-name">' + c.name + '</div>' +
       '<div class="cs-title">' + c.title + '</div></div></div>' +
-      '<div class="cs-blurb">' + c.blurb + '</div>' +
+      '<div class="cs-blurb">' + (CHAR_SELECT_COPY[id]?.blurb || c.blurb) + '</div>' +
       '<div class="cs-school">武器 · ' + charSchoolNames(c) + '</div>' +
       '<div class="cs-route">路线 · ' + (CHAR_ROUTES[c.id] || []).map(function(r){
         return ARCH[r] ? ARCH[r].name : r;
       }).join(' / ') + '</div>' +
-      '<div class="cs-perk"><b>' + c.perkName + '</b>：' + c.perkDesc + '</div>' +
+      '<div class="cs-perk"><b>' + c.perkName + '</b> · ' + (CHAR_SELECT_COPY[id]?.perk || c.perkDesc) + '</div>' +
       '<div class="cs-own">' + charOwnLine(c) + '</div>';
     drawCharPortrait(d.querySelector('canvas'), c);
     d.addEventListener('click', function(){ pickChar(id); });

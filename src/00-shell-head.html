@@ -480,6 +480,76 @@
   #gameover{background:radial-gradient(circle at 50% 45%, rgba(90,30,50,.6), rgba(14,8,20,.94))}
   #gameover h2{color:#ff9fb6;text-shadow:0 calc(var(--u)*.9) 0 #59153a}
 </style>
+<style>
+  /* Neon arcade/comic theme: bright sticker accents against a deep arcade base. */
+  :root{--ink:#11152f;--cream:#fff7d1;--pink:#ff3477;--mint:#d5ff31;--yellow:#ffe231;--violet:#8154ff;--sky:#29e7ff}
+  html,body{background-color:#11142e;background-image:radial-gradient(circle at 20% 25%,#2b2268 0,transparent 36%),radial-gradient(circle at 82% 80%,#123e64 0,transparent 34%),repeating-linear-gradient(135deg,#fff0 0 22px,#29e7ff09 22px 25px);color:#fff7d1}
+  #stage{background:#171a36;box-shadow:0 0 0 4px #11152f,0 0 0 9px #29e7ff,0 0 0 13px #11152f,0 24px 65px #080a1cd9}
+  .overlay{background:rgba(14,17,48,.87);backdrop-filter:none}
+  #title{background:linear-gradient(180deg,#14183de8,#21194bf2 56%,#171a36dc)}
+  #title::before{content:"";position:absolute;inset:0;pointer-events:none;opacity:.23;background:repeating-linear-gradient(132deg,transparent 0 27px,#29e7ff 28px 30px,transparent 31px 57px);mask-image:linear-gradient(90deg,transparent,#000 35% 65%,transparent)}
+  .game-title{position:relative;color:#fffbed;transform:rotate(-2deg);-webkit-text-stroke:.45px #11152f;text-shadow:3px 3px 0 #ff3477,6px 6px 0 #8154ff,0 0 16px #29e7ff;letter-spacing:calc(var(--u)*.65)}
+  .game-title::before{content:"✦  ARCADE MAYHEM  ✦";display:block;width:max-content;margin:0 auto calc(var(--u)*1.6);padding:calc(var(--u)*.6) calc(var(--u)*2.5);border:2px solid #11152f;border-radius:999px;background:#d5ff31;color:#11152f;font-size:clamp(11px,calc(var(--u)*2.5),19px);line-height:1.3;letter-spacing:.15em;text-shadow:none;transform:rotate(2deg);box-shadow:3px 3px 0 #ff3477}
+  .game-sub{color:#29e7ff;letter-spacing:calc(var(--u)*.8);font-size:max(11px,calc(var(--u)*3.7));text-shadow:2px 2px 0 #11152f}
+  .game-sub b{color:#ffe231!important}
+  .bigbtn{border:3px solid #11152f;border-radius:calc(var(--u)*1.2);color:#11152f;background:linear-gradient(180deg,#fff067,#ffe231 70%,#ffc52e);transform:skew(-3deg) rotate(-1deg);box-shadow:0 calc(var(--u)*1.5) 0 #ff3477,0 calc(var(--u)*2.5) 0 #11152f,0 calc(var(--u)*3.4) calc(var(--u)*7) #090b20a8,inset 0 2px #fff7bd}
+  .bigbtn:hover{filter:saturate(1.3) brightness(1.08);transform:skew(-3deg) rotate(1deg) scale(1.04)}
+  .bigbtn:active{transform:skew(-3deg) translateY(calc(var(--u)*1.5));box-shadow:0 calc(var(--u)*.4) 0 #ff3477,0 calc(var(--u)*1) 0 #11152f}
+  .bigbtn.ghost{background:linear-gradient(180deg,#29e7ff,#21bce8);color:#11152f;box-shadow:0 calc(var(--u)*1.5) 0 #8154ff,0 calc(var(--u)*2.5) 0 #11152f,0 calc(var(--u)*4) calc(var(--u)*8) #080b2e}
+  .bigbtn.ghost:active{box-shadow:0 calc(var(--u)*.4) 0 #8154ff,0 calc(var(--u)*1) 0 #11152f}
+  .howto{color:#fffbed;text-shadow:2px 2px 0 #11152f;line-height:1.85;font-size:max(12px,calc(var(--u)*3.8))}
+  .howto b{color:#d5ff31}
+  .bestline{color:#ff76a4;text-shadow:2px 2px 0 #11152f;font-size:max(12px,calc(var(--u)*4.4))}.bestline span{color:#fff7d1}
+  #charselect{background:radial-gradient(ellipse at 50% 8%,#34306f,#1a1c42 66%,#151831);color:#fff7d1;gap:calc(var(--u)*1.3);padding:calc(var(--u)*3.5);overflow-y:auto;justify-content:flex-start}
+  .cs-head{color:#ffe231;-webkit-text-stroke:.35px #11152f;text-shadow:3px 3px 0 #ff3477,5px 5px 0 #11152f;letter-spacing:calc(var(--u)*.35);font-size:clamp(23px,calc(var(--u)*7.2),36px);margin-top:auto;transform:rotate(-1deg)}
+  .cs-sub{color:#29e7ff;font-size:max(11px,calc(var(--u)*3.2));font-weight:800;text-shadow:1px 1px 0 #11152f}
+  .cs-grid{gap:calc(var(--u)*2.5);width:min(calc(var(--u)*307),96%);flex:none}
+  .cs-card{background:linear-gradient(155deg,#f7f5ff,#e8e8ff);border:2px solid #11152f;border-radius:calc(var(--u)*.8);padding:calc(var(--u)*1.2) calc(var(--u)*1.5);box-shadow:4px 5px 0 #080b24;gap:calc(var(--u)*.45);transform:rotate(-.45deg)}
+  .cs-card:nth-child(even){transform:rotate(.55deg)}
+  .cs-card::before{height:calc(var(--u)*1.1);opacity:1}
+  .cs-card:hover{transform:translateY(calc(var(--u)*-1.4)) rotate(1.4deg) scale(1.015);box-shadow:4px 6px 0 #11152f,0 0 0 2px var(--cc),0 0 18px color-mix(in srgb,var(--cc) 70%,transparent);filter:saturate(1.12)}
+  .cs-top{gap:calc(var(--u)*1);margin-top:calc(var(--u)*.45)}
+  .cs-top canvas{width:calc(var(--u)*13);height:calc(var(--u)*13);flex:none;background:var(--cc);border:2px solid #11152f;border-radius:calc(var(--u)*.6);image-rendering:auto;box-shadow:2px 2px 0 #11152f}
+  .cs-name{color:#11152f;font-size:max(13px,calc(var(--u)*4))}.cs-title{font-size:max(10px,calc(var(--u)*2.4));letter-spacing:.55px;color:#5635c9}
+  .cs-blurb{color:#29264b;font-size:max(10px,calc(var(--u)*2.5));min-height:0;line-height:1.25;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+  .cs-school{color:#4230ba;font-size:max(10px,calc(var(--u)*2.3));font-weight:900;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .cs-perk{color:#171a37;border-color:#9081ef;font-size:max(10px,calc(var(--u)*2.4));line-height:1.25;padding-top:calc(var(--u)*.55);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+  .cs-perk b{color:#c52065}.cs-own,.cs-route{display:none}
+  .cs-hint{color:#d5ff31;font-size:max(10px,calc(var(--u)*2.4));font-weight:900;flex:none;margin-bottom:auto;text-shadow:1px 1px 0 #11152f}
+  #levelup{background:radial-gradient(ellipse at 50% 40%,#312c70ed,#10142ff5 78%)}
+  #levelup::before{content:"";position:absolute;inset:0;pointer-events:none;opacity:.2;background:repeating-linear-gradient(135deg,transparent 0 19px,#29e7ff 20px 21px,transparent 22px 42px)}
+  .lv-head{color:#ffe231;-webkit-text-stroke:.35px #11152f;text-shadow:3px 3px 0 #ff3477,6px 6px 0 #11152f;transform:rotate(-1.5deg)}
+  .card{background:linear-gradient(155deg,#fffced,#e8edff 75%,#dbe0ff);border:2px solid #11152f;border-radius:calc(var(--u)*1);box-shadow:4px 5px 0 #0b0d21,0 0 0 2px var(--cc,#ffe231);transform:rotate(-.8deg)}
+  .card:nth-child(even){transform:rotate(.8deg)}
+  .card::before{height:calc(var(--u)*1.5);opacity:1}
+  .card:hover{transform:translateY(calc(var(--u)*-2.2)) rotate(1.1deg) scale(1.035);box-shadow:4px 7px 0 #0b0d21,0 0 0 2px var(--cc),0 0 22px color-mix(in srgb,var(--cc) 78%,transparent);filter:saturate(1.12)}
+  .c-tag{background:var(--cc);color:#11152f;border:1.5px solid #11152f;box-shadow:2px 2px 0 #11152f}
+  .c-icon{background:var(--cc);border:2px solid #11152f;border-radius:calc(var(--u)*1);padding:calc(var(--u)*1.4);box-shadow:3px 3px 0 #11152f,0 0 12px color-mix(in srgb,var(--cc) 55%,transparent);transform:rotate(-2deg)}
+  .c-name{color:#11152f}.c-desc{color:#272641;font-size:max(12px,calc(var(--u)*3.3))}.c-hint{color:#21664e;border-color:#41af82}
+  .c-key{background:#ffe231;border:2px solid #11152f;box-shadow:2px 2px 0 #11152f;color:#11152f}
+  .card.epic{animation:arcadePulse .9s steps(2,end) infinite}
+  @keyframes arcadePulse{0%,100%{box-shadow:4px 5px 0 #0b0d21,0 0 0 2px var(--cc),0 0 7px var(--cc)}50%{box-shadow:4px 5px 0 #0b0d21,0 0 0 4px #ffe231,0 0 22px var(--cc)}}
+  #comboTip{color:#29e7ff;text-shadow:1px 1px #11152f}.lv-hint{color:#fff7d1;text-shadow:1px 1px #11152f}
+  .panel{background:linear-gradient(145deg,#29255c,#171a3d 75%);border:3px solid #11152f;border-radius:calc(var(--u)*1.2);padding:calc(var(--u)*5) calc(var(--u)*6);box-shadow:5px 6px 0 #ff3477,0 0 0 3px #29e7ff,0 12px 28px #080a1caa;color:#fff7d1;transform:rotate(-.5deg)}
+  .panel h2{color:#ffe231;text-shadow:3px 3px 0 #ff3477,5px 5px 0 #11152f}
+  .statgrid .k{color:#29e7ff}.statgrid .v{color:#fffbed}.statgrid .v.hi{color:#d5ff31}
+  .mini{background:#27295a;border:1px solid #29e7ff;border-radius:calc(var(--u)*.8);color:#fff7d1}.mini i{color:#ffe231}
+  .dmghd{color:#29e7ff}.dmgtrack{background:#343360;border:1px solid #080b24}.dmgv{color:#fff7d1}.dmgv em{color:#29e7ff}
+  #pausebox,#gameover{background:rgba(12,15,42,.87)}
+  #gameover h2{color:#ff5d87;text-shadow:3px 3px 0 #11152f}
+  #hpbox,#killbox{background:#11152fe8;border:1px solid #29e7ff;box-shadow:2px 3px 0 #0a0c22}
+  #timer{color:#fff7d1;text-shadow:2px 3px 0 #11152f,0 0 10px #29e7ff}
+  #lvbox{border:2px solid #11152f;box-shadow:2px 3px 0 #ff3477}
+  .slot{background:#161a3cf2;border:1px solid #29e7ff;box-shadow:2px 2px 0 #0a0c22}
+  .rel{background:#171a3fee;border:1px solid #29e7ff;color:#fff7d1;box-shadow:2px 2px 0 #0a0c22}
+  #perkbox,#goal{background:#161a3feF;border:1px solid #29e7ff;box-shadow:2px 2px 0 #090b21;color:#fff7d1}
+  #perkbox{color:#d5ff31}#goal b{color:#ffe231}
+  #goal.done{background:#d5ff31;border-color:#11152f;color:#11152f}
+  #mutebtn,#pausebtn{background:#191d47;border:2px solid #29e7ff;border-radius:calc(var(--u)*.8);box-shadow:2px 3px 0 #0a0c22;color:#ffe231}
+  .cs-hint,.lv-hint{text-align:center}
+  @media(max-aspect-ratio:4/3){.cs-grid{width:min(calc(var(--u)*255),96%);gap:calc(var(--u)*1.4)}.cs-card{padding:calc(var(--u)*1.5)}.cs-blurb{line-height:1.32}.cs-perk{line-height:1.25}}
+  @media(prefers-reduced-motion:reduce){.card,.cs-card,.bigbtn{transition:none;transform:none}.card.epic,.lv-head{animation:none}}
+</style>
 </head>
 <body>
 <div id="stage">
@@ -521,7 +591,7 @@
 
   <div id="title" class="overlay">
     <h1 class="game-title">拖鞋幸存者</h1>
-    <div class="game-sub">SLIPPER SURVIVOR <b style="color:#ffd166">4.1</b> · CLEAN RULES UPDATE</div>
+    <div class="game-sub">SLIPPER SURVIVOR <b style="color:#ffd166">5.0</b> · FULL SCREEN MAYHEM</div>
     <button class="bigbtn" id="startBtn">选 择 角 色</button>
     <div class="howto">
       <b>WASD / 方向键</b> 移动 · 武器<b>自动攻击</b> · <b>空格 / Shift</b> 冲刺<br>
