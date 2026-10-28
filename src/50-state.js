@@ -76,7 +76,13 @@ function getStats(){
     + 4 * lv('plate') + 3 * lv('shell')
     + (C.armor || 0) * 100 + S.armor
     + (hasMeleeWeapon() ? (C.blockArmor || 3) : 0)
-    + guardPtsAll();
+    + guardPtsAll()
+    /* 【6.0】石像鬼：贴身越多甲越厚。这不是"隐形的乘数"，
+       它读的是 applyContact 每帧已经算好的贴身数量，卡面写的就是这个数。 */
+    + (P && relic('gargoyle') ? (state.contactN || 0) * 8 : 0)
+    /* 复仇：每损失 10% 最大生命 +4 点（残血才有的坦度） */
+    + (P && relic('revenge')
+        ? Math.floor((1 - P.hp / Math.max(1, P.maxHp)) * 10) * 4 : 0);
   const armorVal = armorDR(armorPts);
   const maxHpVal = (P && P.maxHp) ? P.maxHp : 200;
 
@@ -105,7 +111,7 @@ function getStats(){
   const heatTier = archTier('heat');
   const freezeTier = archTier('freeze');
 
-  return {
+  const out = {
     speed: C.speed * (1 + 0.09 * lv('shoe')) * S.speed
            * (relic('syncer') ? Math.max(0.76, 1 - turretCountLive() * 0.04) : 1)
            /* 【3.3】游侠的转速表接上机动性：充能越高跑得越快（最多 +14%）。
@@ -128,7 +134,10 @@ function getStats(){
             * (1 + growBonus + fleshMassBonus
                + (P && P.sacStack ? P.sacStack * 0.02 : 0)
                + (beastTier >= 3 ? petCountLive() * 0.06 : 0)
-               + (relic('beastheart') ? petCountLive() * 0.05 : 0)),
+               + (relic('beastheart') ? petCountLive() * 0.05 : 0)
+               /* 【6.0】成长与转化：全部是"看得见的计数 × 一个常数"，
+                  没有隐藏系数，卡面写多少就是多少。 */
+               + (relic('furnace') ? Math.floor(armorPts / 10) * 0.004 : 0)),
     /* 游侠：所有投射武器常驻 +1 弹道（角色自带的，不需要叠层） */
     multi: lv('multi') + S.multi + (C.projBonus || 0) + (barrageTier >= 2 ? 1 : 0),
     pierce: lv('pierce') + S.pierce + (pierceTier >= 1 ? 1 : 0),
@@ -159,22 +168,19 @@ function getStats(){
     regenMul: S.regenMul,
     /* 系统加成 */
     petMul: S.petDmg * (beastTier >= 1 ? 1.15 : 1) * (1 + 0.12 * lv('beastgem')),
-    summonMul: 1,
     turretRate: S.turretRate * (turretTier >= 2 ? 1.15 : 1),
     elemDur: S.elemDur * (elemTier >= 1 ? 1.25 : 1) * (1 + 0.12 * lv('elemgem')),
     enemySpeed: S.enemySpeed,
     /* 火候：燃烧伤害与持续时间；冷冻：冰伤、冻结目标易伤；电网：感电跳数 */
     burnMul: (heatTier >= 1 ? 1.30 : 1) * (S.burnMul0 || 1),
+    /* 冰缓时长倍率：冷冻Ⅰ +30%、冷冻机 +20%。到这里之前它一直是"写了没人读"，
+       所以这两条效果等于不存在。 */
     iceMul: (freezeTier >= 1 ? 1.30 : 1) * (S.iceMul0 || 1),
     frozenVuln: (freezeTier >= 3 ? 0.40 : 0),
-    chainJump: (gridTier >= 1 ? 1 : 0),
     heatTier: heatTier,
     freezeTier: freezeTier,
     gridTier: gridTier,
-    pierceTier: pierceTier,
-    explodeChain: 0,
     orbitMul: 1,
-    meleeMul: 1,
 
     /* ================= 3.0 通用资源 ================= */
     rageGain: (C.rageGain || 1) * (1 + 0.15 * lv('ragegem')) * S.rageGain
@@ -196,8 +202,55 @@ function getStats(){
     dashImpact: S.dashImpact || 0,
     dashCd: (S.dashCd || 1) * Math.pow(0.92, lv('dashgem')),
     dashFlowBonus: S.dashFlowBonus || 0,
-    dashDmgBonus: S.dashDmgBonus || 0
+    dashDmgBonus: S.dashDmgBonus || 0,
+    /* 【6.0】新减伤 / 新条件必须从这里带出来，否则 relicStat 里写了也没人读 */
+    flatDR: S.flatDR || 0,
+    hitCap: S.hitCap || 0,
+    debuffVuln: S.debuffVuln || 0,
+    healToDmg: S.healToDmg || 0,
+    execMul: S.execMul || 0
   };
+  /* 【6.0】三项"转换类"遗物必须等其他字段算完再接，不能写在字面量里互相引用。
+     它们都只读 out 上已经存在的值，不引入新公式。 */
+  if(P && typeof relic === 'function'){
+    /* 疾影：闪避率的 50% 加到暴击率（防御属性接进攻） */
+    if(relic('shadowstep')) out.crit = Math.min(0.95, out.crit + out.dodge * 0.5);
+    /* 疾行：未受伤时移速 +25%（受伤后 3 秒内失效） */
+    if(relic('windward') && state.time - (P.lastHurt || -99) > 3) out.speed *= 1.25;
+    /* 惯性：移速超过 110 的部分，每点 +0.8% 伤害 */
+    if(relic('inertia')){
+      const over = Math.max(0, out.speed - 110);
+      out.dmgMul *= 1 + over * 0.008;
+    }
+
+    /* 【6.0】铸铁心脏：每 100 最大生命换狂战时长与怒气效率。
+       它让"堆血量"在骑士身上直接变成"更长的狂战"，
+       而不是只变成一个更厚的血条。 */
+    if(relic('ironheart')){
+      const k = Math.floor(maxHpVal / 100);
+      out.rageGain *= 1 + 0.03 * k;
+      out.rageDur += 0.2 * k;
+      out.berserkDmg += 0.04 * k;
+    }
+    /* 千刃：每多一条弹道，暴击率 +4%（弹道越多越准，滚雪球） */
+    if(relic('thousandblade')){
+      out.crit = Math.min(0.95, out.crit + Math.max(0, out.multi - 1) * 0.04);
+    }
+    /* 转速表：充能越高冷却越低，最多 -32%。游侠的资源第一次直接接上输出节奏 */
+    if(relic('tachometer') && C.hasCharge){
+      const c = Math.min(1, (P.charge || 0) / 100);
+      out.cdMul *= 1 - 0.32 * c;
+    }
+    /* BOSS 领域：被压的武器流派伤害 ×0.65（写在卡面 / 提示上，不是隐藏） */
+    if(state && state.ban && state.ban.k === 'school') out.banSchool = state.ban.key;
+
+    /* 绝境：残血才给的攻速与移速。高风险，但不是赌博——血条自己看得见 */
+    if(relic('laststand') && P.hp < P.maxHp * 0.30){
+      out.cdMul *= 0.65;
+      out.speed *= 1.12;
+    }
+  }
+  return out;
 }
 
 /* 场上存活炮台 / 宠物数量（getStats 里要用，避免循环依赖） */
@@ -272,13 +325,13 @@ function nextXp(lv){
 
 /* 每次升级 */
 function onLevel(){
-  /* 【5.0】每级生命 6 → 13。
+  /* 每级生命 6 → 13。
      ---------------------------------------------------------
      3.3 把每级生命从 9 砍到 6，理由是"白送生命让敌人平伤失效"。
      那句话在当时的数值下成立，但它建立在**怪物伤害几乎没有成长**之上：
      史莱姆一口 7 点，升一级白送 6 点血当然显得很多。
 
-     5.0 把怪物基础伤害提高了 3~4 倍（史莱姆 26、重甲 58），
+     上一版把怪物基础伤害提高了 3~4 倍（史莱姆 26、重甲 58），
      并且攻击曲线从 8.65 倍压到 2.45 倍——伤害是真的会长在玩家身上。
      这时候 +6/级就不够了：Lv16 才 396 血，而一口围攻能咬掉 130。
      玩家会死在"血条根本没长起来"上，而不是死在"构筑没成型"上。
@@ -361,7 +414,7 @@ function addShake(v){
    血牙从 +0.4%/杀 砍到 +0.15%/杀：旧值等于基础值的 5 倍，
    一件普通遗物直接让回血预算翻 6 倍，是"零投入不死流"的主因。
    --------------------------------------------------------- */
-/* 【5.0】0.07% → 0.035%。击杀回血是唯一"越打越回"的来源，
+/* 0.07% → 0.035%。击杀回血是唯一"越打越回"的来源，
    后期每秒十几杀时它自己就能把治疗桶顶满（0.7%/秒），
    等于所有清场快的角色都自带常驻回血。砍半之后它仍是主要续航，
    但不再是一张免费血包。 */
@@ -402,7 +455,7 @@ function healPoolCap(){ return (P ? P.maxHp : 100) * ECO.healBudget; }
 function drawHealPool(amount){
   if(!P || !(amount > 0) || P.hp >= P.maxHp) return 0;
   amount *= (ST && ST.healMul) ? ST.healMul : 1;
-  /* 【5.0 结构修复】这里原来是一段"边际递减"的效率公式：
+  /* 结构修复：这里原来是一段"边际递减"的效率公式：
        eff = 1 / (1 + 近期回血速度 / 预算)
      它的本意是"越刷越贵"，但数学上根本不收敛到预算：
      设每次请求 A、每帧结算，稳态吞吐解出来是 √(A·预算/Δt)，
@@ -469,7 +522,49 @@ function drawKillHeal(amount){
 
 /* 回血统一入口：所有被动治疗（击杀 / 反应 / 愈合结晶 / 近战吸血）都从这里走 */
 function healPlayer(amount){
-  return drawHealPool(amount);
+  const got = drawHealPool(amount);
+  /* 【6.0】煮汤：治疗量的一部分转成对最近敌人的伤害。
+     加一把锁：伤害→击杀回血→再触发治疗，否则会自己咬自己一圈。 */
+  if(got > 0 && P && !P.brothLock && typeof relic === 'function' && relic('broth')){
+    const rate = (typeof ST !== 'undefined' && ST && ST.healToDmg) || 0;
+    if(rate > 0){
+      let best = null, bd = 1e9;
+      for(let i = 0; i < enemies.length; i++){
+        const e = enemies[i];
+        if(e.dead) continue;
+        const dd = dist(e.x, e.y, P.x, P.y);
+        if(dd < bd && dd < 260){ bd = dd; best = e; }
+      }
+      if(best){
+        P.brothLock = 1;
+        dealDamage(best, got * rate, { src:'broth', dot:true, canCrit:false });
+        P.brothLock = 0;
+      }
+    }
+  }
+  /* 【6.0】治疗计数（进化条件）+ 溢出转伤害 */
+  if(got > 0){
+    evoAdd('heal', got);
+    if(typeof relic === 'function' && relic('overflow') && P && !P.ovfLock){
+      const room = Math.max(0, P.maxHp - P.hp);
+      const over = Math.max(0, amount * ((ST && ST.healMul) || 1) - room) * 0.6;
+      if(over > 1){
+        let best = null, bd = 1e9;
+        for(let i = 0; i < enemies.length; i++){
+          const e = enemies[i];
+          if(e.dead) continue;
+          const dd = dist(e.x, e.y, P.x, P.y);
+          if(dd < bd && dd < 200){ bd = dd; best = e; }
+        }
+        if(best){
+          P.ovfLock = 1;
+          dealDamage(best, over, { src:'overflow', dot:true, canCrit:false });
+          P.ovfLock = 0;
+        }
+      }
+    }
+  }
+  return got;
 }
 
 /* ---------------------------------------------------------
@@ -480,7 +575,7 @@ function tickStatus(e, dt){
   /* 【P0 修复】回旋披萨刀给每只怪打的 e.pizzaCd 从来没有人递减，
      于是每只怪只会被切一次，之后永久免疫——45 秒里只打出 304 点伤害。
      冷却必须在这里衰减，否则"持续旋转切割"其实是一次性伤害。 */
-  /* 【5.0】「标记」易伤：6 秒后消失，层数一起清掉 */
+  /* 「标记」易伤：6 秒后消失，层数一起清掉 */
   if(e.markT > 0){
     e.markT -= dt;
     if(e.markT <= 0){ e.markT = 0; e.markN = 0; }

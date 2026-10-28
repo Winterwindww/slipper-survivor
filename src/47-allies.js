@@ -1,3 +1,26 @@
+/* 【6.0】宠物群体折扣
+   ---------------------------------------------------------
+   门禁里宠物 DPS 一直是全武器第一（19.9k，次高 10.7k），
+   而且它靠的是**数量**：多一只就多一份满额伤害，没有边际递减。
+
+   这里改成"同场越多，单只越弱"：
+     1 只 = 100%，2 只 = 82%，3 只 = 69%，4 只 = 60%
+     总输出：1 只 1.0，4 只 2.4（原来是 4.0）
+
+   这不是隐藏乘数——卡面上"宠物上限 +N"的收益从此是"更多只手"，
+   而不是"更多倍伤害"。配合「巨兽 / 独狼」就变成真正的反向选择：
+   少而精，还是多而杂。 */
+function petSwarmMul(){
+  /* 【6.0 回退】这个折扣当初的依据是"宠物 DPS 19.9k 是第二名 10.7k 的两倍"，
+     但那个数字是 funcgate 被 autoPick 污染后的产物。
+     修好测量之后再看：饲养员的**真实**清怪速度全角色倒数第二
+     （90 秒时 10.5 只/秒，工程师 11.7），场上堆到 66 只怪，
+     然后被远程怪的弹幕磨死——折扣等于往最弱的角色身上再踩一脚。
+     折扣整体撤掉；"多而杂 vs 少而精"的取舍交给「巨兽 / 独狼」这类
+     明写代价的遗物去做，不靠隐形衰减。 */
+  return 1;
+}
+
 /* =========================================================
    4.7 友方单位
    ---------------------------------------------------------
@@ -106,7 +129,7 @@ function deployTurret(type, x, y, lv, dmg, dur){
   const rate = (CHAR.turretRate ? CHAR.turretRate() : 1) * (ST.turretRate || 1) * (1 + (P.turretOverclock || 0));
   /* 阵地协同：每多一座炮台，所有炮台伤害 +8%（最多 +40%） */
   const gridBonus = 1 + Math.min(5, Math.max(0, allyCount('turret'))) * 0.08;
-  const life = dur * relicStat().turretLife;
+  const life = dur * relicStat().turretLife * ((typeof archTier === 'function' && archTier('turret') >= 1) ? 1.25 : 1);
   const a = {
     id: uid++, kind:'turret', ttype: type, name: T.name, col: T.col,
     x: clamp(x, 20, ARENA.w - 20), y: clamp(y, 20, ARENA.h - 20),
@@ -117,7 +140,8 @@ function deployTurret(type, x, y, lv, dmg, dur){
        弹道数按等级成长（每 2 级 +1 发），增殖再 +1 发。 */
     cd: T.rate / rate * wCdMul('turret'),
     burst: (T.burst || 1) + (hasMod('turret', 'count') ? 1 : 0) + Math.floor(Math.max(0, lv - 1) / 2),
-    t: rand(0, 0.25),
+    /* 维修臂：部署后立刻打一发（原来要等 0~0.25 秒） */
+    t: relic('repairarm') ? 0 : rand(0, 0.25),
     life: life, maxLife: life, lv: lv, dead: false, flash: 0, muzzle: 0,
     range: T.range + lv * 6, ang: -Math.PI / 2, seed: rand(0, 10)
   };
@@ -191,6 +215,21 @@ function spawnPet(x, y, lv, dmg, life, forceType, srcId){
     dead: false, flash: 0, hitCd: 0, ang: rand(0, TAU), anim: 0,
     state:'follow', slot: allyCount('pet'), tgt: null, tgtT: 0
   };
+  /* 记录"重生"需要的原始参数（分巢用） */
+  a.dmgBase = dmg;
+  a.life0 = life || 0;
+  /* 兽性元素：宠物攻击附带你最近一次用过的元素 */
+  if(relic('beastmatk') && P.lastElem && !a.elem) a.elem = P.lastElem;
+  /* 巨兽：第一只宠物变成巨兽（生命 ×2.5、伤害 +40%、攻击带击退） */
+  if(relic('behemoth') && !P.behemothId && type !== 'bomb'){
+    P.behemothId = a.id;
+    a.behemoth = 1;
+    a.hp *= 2.5;
+    a.maxHp = a.hp;
+    a.dmg *= 1.4;
+    a.knock = 26;
+    a.r = 10;
+  }
   allies.push(a);
   burst(a.x, a.y, def.col, 8, 90, 0);
   sfx('deploy');
@@ -208,6 +247,12 @@ function onAllyDeath(a, silentBoom){
        funcgate 里它 20 秒打出了 10.5 万伤害（是第二名的 8 倍）。
        现在：爆炸只由攻击入口触发一次（silentBoom），死亡处理不再重复结算，
        重生交给武器自己的补员节奏（不再无延迟立即复活）。 */
+    /* 献祭契约：宠物死亡时炸开一圈，并且永久 +2% 伤害 */
+    if(relic('sacpact')){
+      const sr = 46 * (evoFlag('sacpact', 'spbig') ? 1.6 : 1);
+      explode(a.x, a.y, sr, 14 + (P.level || 1) * 3, '#ff6b8b', true, 'sacpact');
+      P.sacStack = (P.sacStack || 0) + 0.02;
+    }
     if(a.ptype === 'bomb'){
       /* 自爆蘑菇本身就是一次性单位，和流派无关 */
       if(!silentBoom) explode(a.x, a.y, 58, a.dmg * 0.8 + 6, '#ff6b8b', false, 'pet');
@@ -231,8 +276,27 @@ function updateAllies(dt){
     if(a.life > 0){
       a.life -= dt;
       if(a.life <= 0){
-        if(a.kind === 'turret'){ burst(a.x, a.y, a.col, 8, 80, 0); a.dead = true; continue; }
-        if(a.kind === 'pet' && a.maxLife > 0){ a.dead = true; continue; }
+        if(a.kind === 'turret'){
+          /* 主控台：炮台到期时原地爆炸（约等于它 2 秒的输出） */
+          if(relic('mainframe')){
+            const boomR = 62 * (evoFlag('mainframe', 'mfboom') ? 1.6 : 1);
+            explode(a.x, a.y, boomR, a.dmg * Math.max(4, 2 / Math.max(0.12, a.cd)), '#ffe066', true, 'mainframe');
+          }
+          burst(a.x, a.y, a.col, 8, 80, 0);
+          a.dead = true;
+          continue;
+        }
+        if(a.kind === 'pet' && a.maxLife > 0){
+          /* 分巢：宠物死后 2 秒在原地重生（不需要重新召唤） */
+          if(relic('splitnest') && !a.respawned){
+            a.respawned = 1;
+            if(!P.splitQ) P.splitQ = [];
+            P.splitQ.push({ t: evoFlag('splitnest', 'snnear') ? 1 : 2, type:a.ptype, x:a.x, y:a.y,
+                            lv:a.lv, base:a.dmgBase || 1, life:a.life0 || a.maxLife });
+          }
+          a.dead = true;
+          continue;
+        }
       }
     }
     if(a.kind === 'turret') updateTurret(a, dt);
@@ -287,6 +351,8 @@ function updateTurret(a, dt){
   a.t = a.cd;
   a.muzzle = 0.08;
   state.turretMark = tgt;
+  /* 火力网格：炮台命中会标记敌人 2.4 秒，炮台打标记目标更疼 */
+  if(relic('firegrid') && tgt) tgt.fgMarkAt = state.time;
 
   const crit = relic('turretcrit') ? ST.crit : ST.crit * 0.4;
   /* 防线协同：相邻的【不同类型】炮台会把彼此的元素串过来。
@@ -481,12 +547,11 @@ function attackPet(a, tgt){
   const crit = (CHAR.petCrit ? CHAR.petCrit() : ST.crit * 0.5) + ST.crit * 0.2;
   let el = a.elem ? [a.elem].concat(modElems('pet')) : modElems('pet');
   /* 兽性元素：宠物攻击必定附加你最近一次用过的元素 */
-  if(relic('petelem') && P.lastElem && el.indexOf(P.lastElem) < 0) el = el.concat([P.lastElem]);
   /* 同类宠物目睹同伴死亡后变凶：每层 +8%，最多 5 层（由 onPetDeath 累加） */
   const rage = 0;   /* 旧的 petRage 已被「献祭」流派的 sacStack 取代 */
   /* 饲养员专属技能「兽群狂化」：6 秒内全体宠物 +60% 伤害 */
   const fury = (P && P.packFury > 0) ? 1.6 : 1;
-  const dmg = a.dmg * (1 + rage * 0.08) * fury;
+  const dmg = a.dmg * (1 + rage * 0.08) * fury * petSwarmMul();
 
   if(a.mode === 'shot'){
     /* 远程宠物的「散射」：一次三发扇形。这是远程宠物唯一的"弹道"成长轴。 */
@@ -552,6 +617,24 @@ function attackPet(a, tgt){
     return;
   } else {
     dealDamage(tgt, dmg, { src:'pet', critChance:crit });
+    /* 巨兽：每次命中把目标撞开 */
+    if(a.knock && !tgt.big && !tgt.dead){
+      const ka = Math.atan2(tgt.y - a.y, tgt.x - a.x);
+      tgt.x += Math.cos(ka) * a.knock;
+      tgt.y += Math.sin(ka) * a.knock;
+    }
+    /* 【6.0】小狗顺劈：咬一口会扫到身边最多 2 只（20% 伤害）。
+       这是"两只狗怎么处理怪群"的答案之一——给的是**覆盖面**，不是伤害倍率。
+       45% 版本实测会把狗的 DPS 抬高 90%（门禁 14k → 26.6k），那是拿倍率换平衡，
+       所以压到 20%：清怪群的体感还在，但不会变成"抽到狗就赢"。 */
+    if(a.ptype === 'dog'){
+      let n = 0;
+      eachNear(tgt.x, tgt.y, 40, function(o){
+        if(o === tgt || o.dead || n >= 2) return;
+        n++;
+        dealDamage(o, dmg * 0.20, { src:'pet', critChance:crit });
+      });
+    }
     if(el.length) elemOnHit(tgt, el, dmg, 'pet');
     /* 【4.2】「献祭」流派改成「爆裂」：宠物不再死亡，所以原来的
        "死亡爆炸"没有触发条件了。现在宠物每次攻击都附带一圈小爆炸，

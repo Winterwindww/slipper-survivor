@@ -1,3 +1,4 @@
 .deploy-hash
 node_modules/
 _shot*
+_icons.html

@@ -99,7 +99,7 @@ function arenaEvent(){
       strikes.push({ kind:'zap', x: clamp(P.x + Math.cos(a) * d, 20, ARENA.w - 20),
         y: clamp(P.y + Math.sin(a) * d, 20, ARENA.h - 20),
         delay: 0.25 + i * 0.22, max: 0.5, r: 40 * ST.area,
-        /* 【5.0】场地闪电一下 30 点起（约 8~10% 生命），走同一条攻击曲线 */
+        /* 场地闪电一下 30 点起（约 8~10% 生命），走同一条攻击曲线 */
         dmg: 30 * atkCurve(state.time), seed: rand(0, 100), src:'bolt' });
     }
   } else if(kind === 'supply'){

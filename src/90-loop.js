@@ -47,6 +47,8 @@ function resetGame(){
   try{ state.clears = Number(localStorage.getItem('slipper_survivor_clears') || 0) || 0; }catch(e){ state.clears = 0; }
   state.hitstop = 0; state.hitstopCd = 0;
   state.hitCount = 0; state.dmgDealt = 0;
+  /* 【6.0】BOSS 领域每局清空 */
+  state.ban = null;
 
   /* 初始武器 */
   P.weapons[C.weapon] = 1;
@@ -212,10 +214,15 @@ requestAnimationFrame(loop);
 /* =========================================================
    16. 调试 / 无头模拟接口
    ========================================================= */
-const KIND_SCORE = { wevo:18, wup:14, wmod:13, relic:12, wnew:10, wmerge:15, crystal:6, heal:0 };
+const KIND_SCORE = { wevo:18, revo:22, revoTo:22, wup:14, wmod:13, relic:12, wnew:10, wmerge:15, crystal:6, heal:0 };
 
 function autoPickCard(){
   if(state.mode !== 'levelup' || !curChoices || !curChoices.length) return false;
+  /* 进化 A/B 二选一：AI 直接选 A。玩家自己会看到两张卡，
+     这里只是让"进化在真实对局里真的会走到"可被测试验证。 */
+  for(let i = 0; i < curChoices.length; i++){
+    if(curChoices[i].kind === 'revoTo'){ chooseCard(i); return true; }
+  }
   const lowHp = P.hp < P.maxHp * 0.55;
   const wCount = weaponCount();
   const limit = slotLimit();
@@ -227,7 +234,10 @@ function autoPickCard(){
     let s = KIND_SCORE[o.kind] === undefined ? 0 : KIND_SCORE[o.kind];
     if(o.kind === 'wnew'){
       if(wCount >= limit) s = 2;
-      else if(wCount < 2) s += 4;
+      /* 只要有空槽，新武器就是最高优先：一个空槽 = 一份完全闲置的输出位。
+         实测厨师会卡在 2/3 槽——+4 分抢不过同流派的武器升级（20 分），
+         于是一整局只有两把武器。空槽不是以后再说，是现在就亏。 */
+      else s += 12;
     }
     if(o.kind === 'wnew' || o.kind === 'wup' || o.kind === 'wmod'){
       const w = WEAPONS[o.id];
@@ -272,7 +282,7 @@ function autoPickCard(){
 }
 
 window.__SS = {
-  version: '3.0.0',
+  version: '6.0.0',
   start(charId){
     startGame(charId || CHAR.id);
     return true;
@@ -294,6 +304,14 @@ window.__SS = {
   },
   render(){ render(); return true; },
   weaponIds(){ return Object.keys(WEAPONS); },
+  /* 数值审计：全部遗物 id（tools/budget.mjs 用它做全卡压力测试） */
+  allRelicIds(){ return Object.keys(RELICS); },
+  /* 当前角色还能抽到的武器（验证"卡池收口"是否真的生效） */
+  poolFor(){
+    const out = [];
+    for(const id in WEAPONS) if(!P.weapons[id] && weaponForChar(id)) out.push(id);
+    return out;
+  },
   dmgBySrc(){ const o = {}; for(const k in DMG) o[k] = Math.round(DMG[k]); return o; },
   hpTable(){
     /* 给数值审计用：任意时刻各类怪与 BOSS 的实际血量 */
@@ -320,6 +338,13 @@ window.__SS = {
   setBalance(t){ for(const k in t) BALANCE[k] = t[k]; return true; },
   balance(){ const o = {}; for(const k in BALANCE) o[k] = { s:BALANCE[k].s, k:BALANCE[k].k }; return o; },
   refresh(){ refreshSchools(); ST = getStats(); return true; },
+  /* 【6.0】进化与共鸣的测试接口：让门禁能验证"条件达成 → 进化卡出现 → 分支真的生效" */
+  evoIds(){ return Object.keys(EVO); },
+  evoState(){ const o = {}; for(const rid in EVO) o[rid] = evoState(rid); return o; },
+  evoReady(){ return evoReadyList(); },
+  giveEvoN(k, n){ if(!P.evoN) P.evoN = {}; P.evoN[k] = n; return true; },
+  pickEvo(rid, which){ applyRelicEvo(rid, which); refreshSchools(); ST = getStats(); return true; },
+  resonances(){ return resonanceList(); },
   audit(){
     return {
       rate: state.rate || [],
@@ -392,6 +417,39 @@ window.__SS = {
       const r = RELICS[id];
       out.push({ id, name:r.name, icon:r.icon, color:r.color, seed:'relic:' + id });
     }
+    return out;
+  },
+  /* 卡表全量（审计用）：把每件遗物的归属 / 标签 / 稀有度 / 描述原样导出。
+     之前 tools/cardcheck.mjs 查 relicDef 这个方法根本不存在，
+     于是"重名 / 空卡 / 越权"三项全是空跑假绿。 */
+  relicTable(){
+    const out = [];
+    for(const id in RELICS){
+      const r = RELICS[id];
+      out.push({ id, name:r.name, own:r.own || null, rar:r.rar || null,
+                 tags:(r.tags || []).slice(), desc:r.desc || '' });
+    }
+    return out;
+  },
+  passiveTable(){
+    const out = [];
+    for(const id in PASSIVES){
+      const p = PASSIVES[id];
+      out.push({ id, name:p.name, max:p.max || 0, desc: typeof p.desc === 'function' ? p.desc(1) : (p.desc || '') });
+    }
+    return out;
+  },
+  archTable(){
+    const out = [];
+    for(const id in ARCH){
+      const a = ARCH[id];
+      out.push({ id, name:a.name, own:a.own || null, tags:(a.tags || []).slice(), tiers:(a.tiers || []).slice() });
+    }
+    return out;
+  },
+  archPoints(){
+    const out = {};
+    for(const id in ARCH) out[id] = (typeof archPtsRaw === "function") ? archPtsRaw(id) : 0;
     return out;
   },
   modIcons(){
@@ -506,6 +564,8 @@ window.__SS = {
       weapons: Object.assign({}, P.weapons),
       mods: JSON.parse(JSON.stringify(P.wmod)),
       relics: Object.keys(P.relics),
+      relicEvo: Object.assign({}, P.relicEvo || {}),
+      resonances: resonanceList(),
       passives: Object.assign({}, P.passives),
       schools: topSchools(3).map(r => r.id + Math.round(r.share * 100)),
       links: activeLinks().map(l => l.id),

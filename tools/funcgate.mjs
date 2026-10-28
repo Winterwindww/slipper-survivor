@@ -14,6 +14,10 @@ const argv = process.argv.slice(2);
 const arg = (k, d) => { const i = argv.indexOf('--' + k); return i >= 0 && argv[i+1] ? argv[i+1] : d; };
 const LV = Number(arg('lv', 3));
 const SEC = Number(arg('sec', 8));
+/* 靶子数量：默认 10（围一圈）。传 --targets 1 就是单体木桩，
+   两者的比值说明"这把武器是靠单体还是靠数量"。
+   一把武器如果单体第一、群怪也第一，它就是超模，不存在"定位不同"的解释。 */
+const TARGETS = Number(arg('targets', 10));
 
 const html = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
 const code = html.slice(html.indexOf('<script>') + 8, html.lastIndexOf('</script>'));
@@ -93,6 +97,7 @@ function comboTest() {
   return out;
 }
 const fails = [], oks = [];
+const DPS = {};
 
 for (const id of ids) {
   const SS = boot(1234);
@@ -105,10 +110,10 @@ for (const id of ids) {
   SS.state.mode = 'playing';
   SS.state.bossAt = 1e9; SS.state.eliteAt = 1e9;
   /* 靶子：围一圈不会死的怪 */
-  for (let i = 0; i < 10; i++) {
+  for (let i = 0; i < TARGETS; i++) {
     SS.spawn('slime', 1);
     const e = SS.enemies[SS.enemies.length - 1];
-    const a = i / 10 * Math.PI * 2;
+    const a = i / Math.max(1, TARGETS) * Math.PI * 2;
     e.x = SS.P.x + Math.cos(a) * (30 + (i % 3) * 14);
     e.y = SS.P.y + Math.sin(a) * (30 + (i % 3) * 14);
     e.spd = 0; e.hp = 1e9; e.maxHp = 1e9;
@@ -116,7 +121,11 @@ for (const id of ids) {
   let sawBullet = 0, sawAlly = 0;
   const steps = Math.round(SEC * 60);
   for (let i = 0; i < steps; i++) {
-    if (SS.state.mode === 'levelup') { let g = 0; while (SS.state.mode === 'levelup' && g++ < 40) SS.autoPick(); }
+    /* 【6.0 修复】测量期间**不选卡**。
+       原来这里会 autoPick：8 秒里升的 2~3 级随机加卡，同一把武器两次测出来的
+       数字能差 10 倍（炮台 11081 与 91030 就是同一把、同一等级、不同随机卡）。
+       测武器就该只测武器本身。 */
+    if (SS.state.mode === 'levelup') SS.state.mode = 'playing';
     SS.step(1/60);
     if (SS.bullets.length > sawBullet) sawBullet = SS.bullets.length;
     if (SS.allies.length > sawAlly) sawAlly = SS.allies.length;
@@ -127,9 +136,13 @@ for (const id of ids) {
   /* 炮台 / 宠物的伤害统一记在 'turret' / 'pet' 上，所以按"场上有单位"判定 */
   const dealt = (bySrc[id] || 0) + (sawAlly > 0 ? (bySrc.turret || 0) + (bySrc.pet || 0) : 0);
   const kills = snap.kills || 0;
-  const ok = dealt > 0 || sawBullet > 0 || sawAlly > 0 || kills > 0;
+  /* 【6.0 修复】原来的判据是"有伤害 或 有子弹 或 有召唤物 或 有击杀"。
+     地雷工厂正是靠"召了一个不会开火的炮台"混过了门禁——它是全场唯一
+     0 伤害的武器，门禁却判它通过。召唤物/子弹只是**过程**，伤害才是结果。 */
+  const ok = dealt > 0;
   if (ok) oks.push(`${id}(伤害${Math.round(dealt)}/弹${sawBullet}/召${sawAlly})`);
   else fails.push(id);
+  DPS[id] = Math.round(dealt);
 }
 
 const combos = comboTest();
@@ -146,3 +159,6 @@ if (fails.length) {
 }
 if (fails.length || comboFail) process.exit(1);
 console.log('\n功能门禁通过');
+
+/* 机器可读的 DPS 表（tools/weaponbudget.mjs 用） */
+if (argv.includes('--json')) console.log('DPSJSON ' + JSON.stringify(DPS));

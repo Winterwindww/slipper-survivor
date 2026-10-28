@@ -13,7 +13,6 @@
      阵地  · 火力网  炮台命中打标记，其它炮台打标记目标加成
      兽群  · 兽群    宠物集火叠标记；宠物击杀让全体宠物变强
      爆破  · 连锁爆  爆炸有概率引发二次小爆炸
-     弹幕  · 压制    累计命中达到阈值，弹幕武器立刻装填完毕
      暴击  · 锐气    暴击叠锐气（暴击率 + 爆伤），停手就衰减
      环绕  · 环绕格挡 环绕体持续清掉靠近的敌弹
      元素  · 反应    厨师专属
@@ -25,7 +24,6 @@ const SCHOOL_MECH = {
   fort:    { name:'火力网',    icon:'▣', desc:'炮台命中打上标记 2.4 秒，炮台打标记目标 +25%/级' },
   beast:   { name:'兽群',      icon:'🐾', desc:'宠物集火同一目标叠标记（最多 5 层），宠物伤害 +8%/层；宠物击杀后全体宠物 +8%' },
   blast:   { name:'连锁爆',    icon:'✹', desc:'爆炸有概率在附近再引发一次小爆炸' },
-  barrage: { name:'压制',      icon:'≡', desc:'累计命中到阈值，所有弹幕武器立刻装填完毕' },
   crit:    { name:'锐气',      icon:'✦', desc:'暴击叠锐气：+1.5% 暴击率 / +3% 爆伤每层，3 秒不出暴击开始衰减' },
   orbit:   { name:'环绕格挡',  icon:'◍', desc:'环绕体持续清除靠近你的敌弹，并把贴身的敌人推远' },
   fire:    { name:'灼烧反应',  icon:'🔥', desc:'厨师专长：燃烧 / 融化，反应伤害与回血只有厨师吃满' },
@@ -143,7 +141,7 @@ function schoolTick(dt){
    事件监听（每局注册一次）
    --------------------------------------------------------- */
 function initSchoolMech(){
-  P.sc = { combo:0, comboT:0, sharp:0, sharpen:0, bar:0, pack:0, packUntil:0, orbitT:0 };
+  P.sc = { combo:0, comboT:0, sharp:0, sharpen:0, pack:0, packUntil:0, orbitT:0 };
 
   /* ---- 命中 ---- */
   on('hit', function(h){
@@ -176,34 +174,12 @@ function initSchoolMech(){
       e.packUntil = now + 2.6;
     }
 
-    /* 弹幕压制：攒够命中就提前装填一半，但**每 2.5 秒最多一次**。
-       之前这一条没有冷却，命中数又随出手频率上涨 → 正反馈失控，冷却无限叠加。 */
-    if(T.barrage){
-      S.bar = (S.bar || 0) + 1;
-      const need = Math.max(6, 14 - T.barrage * 2 - gemLv('magchip') * 2);
-      if(S.bar >= need && (S.barCd || 0) <= now){
-        S.bar = 0;
-        S.barCd = now + 2.5;
-        let any = false;
-        for(const id in P.weapons){
-          const w = WEAPONS[id];
-          if(w && w.school === 'barrage' && P.cds[id] > 0.08){
-            P.cds[id] = P.cds[id] * 0.5;
-            any = true;
-          }
-        }
-        if(any){
-          rings.push({ x:P.x, y:P.y, r0:10, r1:52, life:0.22, max:0.22, col:'#ffc46b', w:2 });
-          sfx('pop');
-        }
-      }
-    }
   });
 
   /* ---- 暴击：锐气 ---- */
   on('crit', function(){
     if(!P.scT || !P.scT.crit) return;
-    const cap = 6 + P.scT.crit * 3 + gemLv('whetstone') * 3;
+    const cap = 6 + P.scT.crit * 3;
     P.sc.sharp = Math.min(cap, (P.sc.sharp || 0) + 1);
     P.sc.sharpT = state.time;
   });

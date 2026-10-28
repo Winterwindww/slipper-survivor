@@ -32,7 +32,10 @@ function makePetWeapon(cfg){
     stats: lv => ({
       dmg: (cfg.dmg[0] + cfg.dmg[1] * lv + cfg.dmg[2] * lv * lv),
       cd: Math.max(1.8, 5.0 - 0.55 * lv),
-      count: Math.min(4, 1 + Math.ceil(lv / 2))
+      /* 【6.0】Lv1 三只（旧公式 1+ceil(lv/2) 让开局只有 2 只，
+         而选人页一直写着"宠物 +3"，玩家第一眼就对不上）。
+         现在 Lv1 = 3，Lv4 起 = 4，和"每种上限 4 只"一致。 */
+      count: Math.min(4, 2 + Math.ceil(lv / 3))
     }),
     awaken: cfg.awaken,
     fire(lv){

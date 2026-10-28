@@ -35,6 +35,16 @@
     display:block;width:100%;height:100%;
     image-rendering:pixelated;image-rendering:crisp-edges;
   }
+  /* 【6.0】文字覆盖层
+     ---------------------------------------------------------
+     "飘字糊"不是字体问题：主画布是 640×360，被 CSS 放大 3 倍，
+     再叠 image-rendering:pixelated —— 8px 的中文放大后必然是马赛克。
+     这里单独开一层按设备像素比渲染的透明画布，只画文字：
+     像素美术仍然是硬边（pixelated），文字是平滑的。 */
+  #txt{
+    position:absolute;left:0;top:0;width:100%;height:100%;
+    pointer-events:none;image-rendering:auto;z-index:6;
+  }
 
   /* ---------------- HUD ---------------- */
   #lowhp{position:absolute;inset:0;pointer-events:none;opacity:0;box-shadow:inset 0 0 calc(var(--u)*14) calc(var(--u)*3) rgba(255,60,80,.55);transition:opacity .25s}
@@ -367,6 +377,9 @@
   .bestline span{color:#fff;}
 
   /* level up */
+  /* 【6.0】BOSS 领域：放在顶部，和血条同屏 */
+  .bantag{position:absolute;left:50%;transform:translateX(-50%);top:44px;font-size:11px;
+    letter-spacing:1px;color:#ff9dc0;text-shadow:0 0 8px rgba(255,90,140,.55);display:none;white-space:nowrap}
   #levelup{background:rgba(18,10,30,.72)}
   .lv-head{
     font-size:calc(var(--u)*8);font-weight:900;color:#ffe9a8;letter-spacing:2px;
@@ -554,11 +567,13 @@
 <body>
 <div id="stage">
   <canvas id="game" width="640" height="360"></canvas>
+  <canvas id="txt"></canvas>
   <div id="lowhp"></div>
 
   <div id="hud" class="hidden">
     <div id="xpwrap"><div id="xpfill"></div></div>
     <div id="topbar">
+      <div id="banTag" class="bantag"></div>
       <div id="hpbox">
         <span class="heart">♥</span>
         <div class="hpcol">
@@ -591,7 +606,7 @@
 
   <div id="title" class="overlay">
     <h1 class="game-title">拖鞋幸存者</h1>
-    <div class="game-sub">SLIPPER SURVIVOR <b style="color:#ffd166">5.0</b> · FULL SCREEN MAYHEM</div>
+    <div class="game-sub">SLIPPER SURVIVOR <b style="color:#ffd166">6.0</b> · FULL SCREEN MAYHEM</div>
     <button class="bigbtn" id="startBtn">选 择 角 色</button>
     <div class="howto">
       <b>WASD / 方向键</b> 移动 · 武器<b>自动攻击</b> · <b>空格 / Shift</b> 冲刺<br>

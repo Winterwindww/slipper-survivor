@@ -42,7 +42,7 @@ const MODS = {
   chargeup:{ name:'蓄能', desc:'这把武器的命中额外 +100% 充能获取' },
   bloodpact:{ name:'血契', desc:'命中附加 0.5% 最大生命的真实伤害（无视护甲，每 0.12 秒一次）' },
 
-  /* ---- 5.0 条件型改造：不再是"再多加一点伤害" ----
+  /* ---- 条件型改造：不再是"再多加一点伤害" ----
      它们让同一把武器在不同局面下的表现完全不同：
      打小怪、打大怪、贴脸、远程，该拿的卡不是同一张。 */
   opener:  { name:'先手',   desc:'对满血目标伤害 +80%（开局与非满血残兵是两种手感）' },
@@ -70,14 +70,34 @@ const WEAPON_OWNER = {
   petlizard:'keeper', petpenguin:'keeper', pethamster:'keeper', petbomb:'keeper'
 };
 function weaponOwner(id){ return WEAPON_OWNER[id] || null; }
+
+/* 【6.0】通用武器收口
+   ---------------------------------------------------------
+   原来 56 把武器里只有 28 把有归属，另外 28 把对**所有角色**开放。
+   结果工程师的池子里 80% 是通用件：他抽不到炮台，却一路拿到泡泡糖和番茄——
+   这正是"玩工程师还是拿到一堆跟自己没关系的东西"的根因。
+
+   现在每把通用武器只对 1~2 个角色开放（共 28 把，每个角色 6 把）。
+   **不是删武器，是让"选角色"真的决定你能抽到什么。**
+   已有武器不受影响；交换 / 改造 / 精炼照常。 */
+const GENERIC_FOR = {
+  knight:  ['pan', 'bat', 'chainsaw', 'nunchaku', 'pizzacutter', 'bubble'],
+  ranger:  ['slipper', 'snipe', 'gun', 'dice', 'boomerang', 'candy'],
+  engineer:['mine', 'missile', 'chain', 'beam', 'hole', 'bolt'],
+  keeper:  ['banana', 'tomato', 'popcorn', 'aura', 'mop', 'fan'],
+  chef:    ['flamer', 'frost', 'ladle', 'cleaver', 'bubble', 'fan']
+};
 function weaponForChar(id){
   const o = WEAPON_OWNER[id];
-  return !o || o === (CHAR && CHAR.id);
+  if(o) return o === (CHAR && CHAR.id);
+  const list = GENERIC_FOR[CHAR && CHAR.id];
+  if(!list) return true;
+  return list.indexOf(id) >= 0;
 }
 
 function wmods(id){ return (P && P.wmod && P.wmod[id]) || EMPTY_ARR; }
 
-/* 【5.0】条件型改造的伤害系数。
+/* 条件型改造的伤害系数。
    放在 42-weapons 里是因为它只跟"哪把武器带了这个改造"有关，
    不改变伤害管线本身的顺序（仍然只乘一次）。 */
 function modCondMul(src, e){
@@ -202,7 +222,7 @@ const BALANCE = {
   claymore:   { s:1.15, k:1.00 },
 
   /* --- 3.2 角色专属 --- */
-  /* --- 5.0 游侠新武器 --- */
+  /* --- 游侠新武器 --- */
   shotgun:    { s:0.66, k:1.00 },
   railgun:    { s:0.76, k:1.00 },
   rain:       { s:1.30, k:1.00 },
@@ -473,7 +493,7 @@ const WEAPONS = {
     }
   },
 
-  /* ============ 5.0 游侠的三把新武器 ============
+  /* ============ 游侠的三把新武器 ============
      用户的原话："一共就几把武器可选，把把都差不多，
      强化也无外乎加加弹道和穿透。"
      这三把不是"再加一条弹道"，而是三种完全不同的开火方式：
@@ -545,7 +565,9 @@ const WEAPONS = {
         addBullet({
           type:'rail', x:P.x, y:P.y - 2,
           vx: Math.cos(a) * 760, vy: Math.sin(a) * 760,
-          r: 8, dmg: s.dmg, life: 1.10, pierce: 99,
+          /* 【6.0】原来是 99（无限穿），穿透属性对它完全无效。
+             改成 4 + 属性，既保留"贯穿一条线"的身份，也让「穿透 +1」有收益。 */
+          r: 8, dmg: s.dmg, life: 1.10, pierce: 4 + Math.min(8, ST.pierce),
           hitSet:new Set(), hitCount:0, rot:a, spin:0,
           col:'#cdf6ff', src:'railgun', range: R, trail: true,
           onHitSide: evo ? 0.60 : 0
@@ -617,9 +639,12 @@ const WEAPONS = {
         addBullet({
           type:'boomerang', x:P.x, y:P.y - 2,
           vx: Math.cos(a) * 330, vy: Math.sin(a) * 330,
-          r: 6, dmg: s.dmg, life: 1.5, pierce: 99, hitCount: 0,
+          /* 【6.0 修复】原来 pierce 写死 99 = 无限穿透，于是"穿透 +1"对它是废属性，
+             贯穿衰减也整段跳过（代码里 pierce===99 直接免疫）。
+             现在：底子能穿 3 个，穿透属性再往上加，飞满射程再掉头。 */
+          r: 6, dmg: s.dmg, life: 2.6, pierce: 3 + Math.min(6, ST.pierce), hitCount: 0, trav: 0,
           hitSet: new Set(), rot: a, spin: 18, col: '#ffc46b', src: 'chakram',
-          range: wRange(320, lv), back: 0.5, backMul: evo ? 2.0 : 1.55, boom: 0
+          range: wRange(320, lv), back: 0.9, backMul: evo ? 2.0 : 1.55, boom: 0
         });
       }
       sfx('whoosh');
@@ -1239,7 +1264,7 @@ const WEAPONS = {
     stats: lv => ({
       dmg: 17 + 9*lv + 2.9*lv*lv,
       cd: Math.max(2.2, 5.6 - 0.55*lv),
-      dur: 8 + lv * 1.4,      /* 【5.0】9+1.6lv → 6+1.1lv：工程师的伤害来自"部署速度"，
+      dur: 8 + lv * 1.4,      /* 9+1.6lv → 6+1.1lv：工程师的伤害来自"部署速度"，
                                   炮台覆盖时间太长就等于永久的堡垒 */
       count: 1 + Math.floor(lv / 3)
     }),
@@ -1380,9 +1405,14 @@ const WEAPONS = {
         addBullet({
           type:'boomerang', x:P.x, y:P.y - 2,
           vx: Math.cos(a) * 320, vy: Math.sin(a) * 320,
-          r: 6, dmg: s.dmg, life: 1.5, pierce: 99, hitCount: 0,
+          r: 6, dmg: s.dmg,
+          /* 【6.0 修复】原来 life 只有 1.5 秒、掉头阈值是射程的 55%（≈165px），
+             于是它飞出去不到两百像素就往回拐，两趟速度一样，玩家看到的
+             是"丢出去就消失了"。现在：飞满射程再掉头，回程稍快，
+             寿命留够一个完整来回。 */
+          life: 2.6, pierce: 3 + Math.min(6, ST.pierce), hitCount: 0, trav: 0,
           hitSet: new Set(), rot: a, spin: 16, col:'#a6ffcb', src:'boomerang',
-          range: wRange(300, lv), back: 0.5, backMul: evo ? 2.0 : 1.4, boom:0
+          range: wRange(300, lv), back: 0.9, backMul: evo ? 2.0 : 1.4, boom:0
         });
       }
       sfx('shoot');
@@ -1495,16 +1525,37 @@ const WEAPONS = {
     labels:{ dmg:'地雷伤害', cd:'部署间隔', dur:'存在时长' },
     stats: lv => ({
       dmg: 16 + 8*lv + 2.6*lv*lv,
-      cd: Math.max(3.8, 8.4 - 0.85*lv),
+      /* 【6.0 修复】原来 Lv3 是 5.85 秒一颗、Lv5 才 4.15 秒，一颗只活 16 秒，
+         稳定状态场上只有 2~3 颗雷——比 1 级的夹心地雷还稀疏，
+         叫"工厂"名不副实。现在 Lv3 ≈ 2.85 秒、Lv5 ≈ 1.95 秒，
+         16 秒寿命下稳定 6~8 颗，才是"人走了雷还在"。 */
+      cd: Math.max(1.9, 4.2 - 0.45*lv),
       dur: 10 + lv * 2,
-      count: 1
+      count: 1 + Math.floor(lv / 3)
     }),
     awaken:'雷场：工厂部署更快，地雷同时存在数翻倍',
     fire(lv){
       const s = this.stats(lv);
-      if(turretCountOf('factory') >= turretLimitOf('factory')) retireOldestTurret('factory');
-      deployTurret('factory', P.x + rand(-30, 30), P.y + rand(-30, 30), lv, s.dmg * wDmgMul('minefactory'), s.dur);
-      sfx('deploy');
+      /* 【6.0 修复】原来它 deployTurret('factory', ...)，而 TURRETS 里**没有 factory 这一型**，
+         于是掉进 `TURRETS[type] || TURRETS.mg` 的兜底；兜底出来的机枪塔既没有工厂的
+         产出逻辑，又因为索敌/冷却字段对不上，整局一场伤害都打不出来
+         （funcgate 里它是唯一一把"伤害 0"的武器，而门禁因为"召了一个单位"判它通过）。
+
+         它本来该做的事就写在卡面上：**自己不断生产地雷撒在周围**。
+         所以直接走已有的 mines 系统，不再借炮台。 */
+      const n = s.count + (hasMod('minefactory', 'count') ? 1 : 0);
+      for(let i = 0; i < n; i++){
+        if(mines.length > 70) break;
+        const ang = rand(0, TAU), rr = rand(10, 52);
+        mines.push({
+          x: clamp(P.x + Math.cos(ang) * rr, 16, ARENA.w - 16),
+          y: clamp(P.y + Math.sin(ang) * rr, 16, ARENA.h - 16),
+          r: 15, dmg: s.dmg * wDmgMul('minefactory'),
+          boom: (34 + lv * 5) * ST.area * (hasMod('minefactory', 'size') ? 1.25 : 1),
+          arm: 0.45, life: s.dur, seed: rand(0, 10), evo:0, src:'minefactory'
+        });
+      }
+      sfx('pop');
     }
   },
 
@@ -1702,6 +1753,13 @@ const WEAPONS = {
    4 槽之后：每把武器平均能吃到 7 张卡，改造与觉醒都能落地，
    而且"带哪 4 把"重新变成一个要做的决定。 */
 const MAX_SLOTS = 4;
+/* 【6.0】槽位等级保持 1 / 5 / 11 / 18
+   ---------------------------------------------------------
+   试过把第 2 槽从 Lv5 提前到 Lv3，想解决"Lv1~4 只有一把武器"。
+   三种子对照：骑士 458s→158s、152s→153s；游侠 158~419s 不变。
+   **没有证据表明更早的第二把武器更好**——它挤掉了同一时期的
+   武器升级与遗物，等于用"数量"换掉了"质量"。
+   在拿到多种子证据之前不改。原样保留。 */
 const SLOT_UNLOCK = [1, 5, 11, 18];      /* 第 n 把武器需要的等级 */
 
 function weaponSlots(){

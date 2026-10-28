@@ -373,6 +373,12 @@ function overloadEnter(){
   P.charge = 0;
   P.overloadCount = (P.overloadCount || 0) + 1;
   P.overload = Math.max(1.0, ST.overloadDur || RES.overloadBase);
+  /* 转速表：充能打满的瞬间全武器齐射一轮（游侠的"滚雪球快到顶"的兑现） */
+  if(relic('tachometer') && !P.tachoLock){
+    P.tachoLock = 1;
+    volleyAll();
+    P.tachoLock = 0;
+  }
   addText(P.x, P.y - 34, '超 载 ！', '#7ce3ff', 15);
   if(rings.length < 40){
     rings.push({ x:P.x, y:P.y, r0:14, r1:150, life:0.4, max:0.4, col:'#7ce3ff', w:4 });

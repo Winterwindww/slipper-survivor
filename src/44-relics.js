@@ -21,7 +21,7 @@ const PASSIVES = {
      和遗物（一次到位）互补 —— 遗物决定方向，结晶决定厚度。 */
   dashgem:{ name:'踏风结晶', color:'#7ce3ff', icon:'gear',   max:3, desc:(l)=>'冲刺回复 -8% / 级' },
   magnet: { name:'磁力结晶', color:'#c39bff', icon:'magnet', max:4, desc:()=>'经验拾取范围 +40' },
-  clover: { name:'幸运结晶', color:'#6fdc8c', icon:'clover', max:3, desc:()=>'经验获取 +16%' },
+  clover: { name:'聪慧结晶', color:'#6fdc8c', icon:'clover', max:3, desc:()=>'经验获取 +16%' },
   vamp:   { name:'吸血结晶', color:'#ff6b8f', icon:'vamp',   max:3, desc:()=>'每杀 1 只额外回复 0.02% 最大生命 / 级' },
   regen:  { name:'愈合结晶', color:'#7ef0c0', icon:'heart',  max:2, desc:()=>'每 5 秒回复 1.2% 最大生命 / 级' },
   crit:   { name:'暴击星糖', color:'#ffd166', icon:'star',   max:4, desc:()=>'暴击率 +7%' },
@@ -41,10 +41,6 @@ const PASSIVES = {
               desc:(l)=>'宠物伤害 +15%；2 级起宠物上限 +1' },
   corebomb: { name:'引爆核心', color:'#ff9d4d', icon:'mine',  max:3,
               desc:(l)=>'爆炸半径 +15%，连锁引爆概率 +10%' },
-  magchip:  { name:'弹幕弹匣', color:'#ffc46b', icon:'multi', max:3,
-              desc:(l)=>'「压制」所需命中次数 -2' },
-  whetstone:{ name:'锐气磨石', color:'#ffd166', icon:'star',  max:3,
-              desc:(l)=>'锐气上限 +3 层' },
   guardring:{ name:'环绕护盾', color:'#9fe8ff', icon:'aura',  max:3,
               desc:(l)=>'环绕格挡间隔 -0.1 秒' },
 
@@ -83,22 +79,6 @@ const RELICS = {
        走位（移速 / 冷却）· 换弹道（多重）· 打元素（单系强化）
        · 堆防御（护甲 / 护盾）· 召唤（宠物 / 炮台）· 经济（拾取 / 经验）
      每件只做一件事，描述一行说得完。 */
-  whetstone:  { name:'磨刀石', rar:'common', tags:['crit'], color:'#ffd166', icon:'cleaver',
-                desc:'暴击率 +6%' },
-  counterweight:{ name:'秤砣', rar:'common', tags:['blast'], color:'#ff9d4d', icon:'aura',
-                desc:'爆炸范围 +15%' },
-  springshoe: { name:'弹簧鞋', rar:'common', tags:['move'], color:'#8ee06e', icon:'shoe',
-                desc:'移动速度 +8%' },
-  lodestone:  { name:'磁石芯', rar:'common', tags:['util'], color:'#c39bff', icon:'magnet',
-                desc:'拾取范围 +60' },
-  coldpack:   { name:'冰袋', rar:'common', tags:['ice'], color:'#8fe8ff', icon:'frost',
-                desc:'冰霜伤害 +25%' },
-  pepperjar:  { name:'辣椒罐', rar:'common', tags:['fire'], color:'#ff6b4d', icon:'flamer',
-                desc:'燃烧伤害 +25%' },
-  copperwire: { name:'铜线', rar:'common', tags:['volt'], color:'#ffe066', icon:'coil',
-                desc:'元素反应伤害 +20%' },
-  venomgland: { name:'毒囊', rar:'common', tags:['venom'], color:'#a6e05a', icon:'vial',
-                desc:'元素持续时间 +25%' },
   anvil:      { name:'铁砧', rar:'rare', tags:['tank'], color:'#9fb4c9', icon:'mine',
                 desc:'护甲 +14 点，移速 -6%' },
   luckydie:   { name:'幸运骰', rar:'rare', tags:['lucky'], color:'#6fdc8c', icon:'dice',
@@ -107,7 +87,7 @@ const RELICS = {
                 desc:'全部武器冷却 -8%' },
   powderkeg:  { name:'火药桶', rar:'rare', tags:['blast'], color:'#ff9d4d', icon:'missile',
                 desc:'爆炸伤害 +20%，范围 +10%' },
-  fangbeast:  { name:'兽牙', rar:'rare', tags:['pet'], color:'#8ee6b3', icon:'pet',
+  fangbeast:  { name:'兽牙', own:'keeper', rar:'rare', tags:['pet'], color:'#8ee6b3', icon:'pet',
                 desc:'宠物伤害 +25%' },
   deepocket:  { name:'深口袋', rar:'rare', tags:['util'], color:'#c9b0ff', icon:'gem',
                 desc:'武器槽 +1' },
@@ -115,10 +95,6 @@ const RELICS = {
                 desc:'击杀回血 +80%' },
   magazine:   { name:'弹匣', rar:'rare', tags:['barrage'], color:'#9fe0ff', icon:'multi',
                 desc:'弹道 +1，全部武器冷却 +6%（代价）' },
-  platewall:  { name:'加固板', rar:'epic', tags:['tank'], color:'#9fb4c9', icon:'shield',
-                desc:'护甲 +24 点' },
-  huntereye:  { name:'猎手之眼', rar:'epic', tags:['crit'], color:'#ffd166', icon:'star',
-                desc:'暴击伤害 +45%' },
 
   /* ===== 普通：小机制，凑数量也是拼图 ===== */
   ember:      { name:'余烬', rar:'common', tags:['fire'], color:'#ff8a3d', icon:'aura',
@@ -127,10 +103,6 @@ const RELICS = {
                 desc:'暴击时 30% 概率对周围放电，附带感电' },
   fang:       { name:'血牙', rar:'common', tags:['heal'], color:'#ff6b8f', icon:'vamp',
                 desc:'击杀回血翻倍（基础每杀 0.05%，所有来源合计每秒最多 2%）' },
-  luckycoin:  { name:'幸运币', rar:'common', tags:['lucky'], color:'#6fdc8c', icon:'clover',
-                desc:'暴击率 +3%，幸运 +25%（影响随机强化）' },
-  steadypan:  { name:'铁锅护心', rar:'common', tags:['tank'], color:'#9fb4c9', icon:'pan',
-                desc:'减伤 +6%' },
   quickboot:  { name:'快步鞋', rar:'common', tags:['move'], color:'#8ee06e', icon:'shoe',
                 desc:'移动速度 +12%' },
   piercepin:  { own:'ranger', name:'穿甲钉', rar:'common', tags:['pierce'], color:'#9fe0ff', icon:'pierce',
@@ -143,12 +115,8 @@ const RELICS = {
                 desc:'命中时 12% 概率使敌人中毒' },
   longfuse:   { name:'长引信', rar:'common', tags:['blast'], color:'#ff9d4d', icon:'aura',
                 desc:'爆炸范围 +20%' },
-  magnetstone:{ name:'磁石', rar:'common', tags:['util'], color:'#c39bff', icon:'magnet',
-                desc:'经验拾取范围 +60' },
   xplens:     { name:'经验透镜', rar:'common', tags:['util'], color:'#7cc7ff', icon:'lens',
                 desc:'经验获取 +20%' },
-  thickskin:  { name:'厚皮', rar:'common', tags:['tank'], color:'#ff8fb0', icon:'heart',
-                desc:'最大生命 +35' },
 
   /* ===== 稀有：改变一条链路 ===== */
   chaincrit:  { own:'engineer', name:'连锁闪电', rar:'rare', tags:['crit','volt'], color:'#8fd8ff', icon:'chain',
@@ -157,15 +125,13 @@ const RELICS = {
                 desc:'燃烧中的敌人死亡时爆炸，范围与伤害都更大' },
   turretcrit: { own:'engineer', name:'炮台校准', rar:'rare', tags:['turret','crit'], color:'#ffe066', icon:'turret',
                 desc:'炮台 / 图腾完整继承你的暴击率与暴击伤害' },
-  petelem:    { name:'兽性元素', rar:'rare', tags:['pet','elem'], color:'#8ee6b3', icon:'pet',
-                desc:'宠物攻击必定附加你最近一次使用的元素' },
   meltsurge:  { name:'融化冲击', rar:'rare', tags:['elem'], color:'#ffcf7a', icon:'flamer',
                 desc:'元素反应伤害 +50%' },
   killshot:   { name:'击杀弹幕', rar:'rare', tags:['proj'], color:'#ffc46b', icon:'slipper',
                 desc:'击杀时 25% 概率朝随机方向打出一发弹片' },
-  dodgeprism: { name:'闪避棱镜', rar:'rare', tags:['crit','dodge'], color:'#a6ffcb', icon:'star',
-                desc:'闪避成功后，下一次攻击必定暴击' },
-  bloodrage:  { name:'血怒', rar:'rare', tags:['rage'], color:'#ff8a5c', icon:'star',
+  /* 原来标签写 ['rage']，会被当成骑士专属来分类，可它的效果是"残血强化"，
+     与怒气资源毫无关系——四个别的角色照样能用。 */
+  bloodrage:  { name:'血怒', rar:'rare', tags:['tank','util'], color:'#ff8a5c', icon:'star',
                 desc:'生命低于 40% 时，冷却 -29%、伤害 +20%' },
   thornsplate:{ name:'尖刺甲', rar:'rare', tags:['tank'], color:'#ffb0c4', icon:'mine',
                 desc:'挨打时反弹周围敌人；反伤随最大生命与护甲一起成长' },
@@ -181,15 +147,13 @@ const RELICS = {
                 desc:'每拾取 18 颗宝石，在原地爆开一圈' },
   burstcore:  { name:'爆裂核心', rar:'rare', tags:['blast'], color:'#ff9d4d', icon:'aura',
                 desc:'爆炸有 30% 概率再炸一次（不递归触发）' },
-  packleader: { name:'小队长', rar:'rare', tags:['pet'], color:'#8ee6b3', icon:'pet',
-                desc:'宠物上限 +2，宠物伤害 +35%' },
 
   /* ===== 史诗：直接定义 build ===== */
   singularity:{ name:'奇点', rar:'epic', tags:['elem','cc'], color:'#b98cff', icon:'hole',
                 desc:'元素反应会留下 2 秒的吸引场，把周围敌人拽进来' },
   echoheart:  { name:'回响之心', rar:'epic', tags:['echo'], color:'#9fe0ff', icon:'aura',
                 desc:'每次开火有 10% 概率让所有武器立刻再齐射一轮' },
-  soulharvest:{ name:'灵魂收割', rar:'epic', tags:['summon'], color:'#c7a2ff', icon:'pet',
+  soulharvest:{ name:'灵魂收割', rar:'epic', tags:['growth','util'], color:'#c7a2ff', icon:'pet',
                 desc:'击杀有 8% 概率召唤一只临时宠物，持续 10 秒（1.2 秒冷却，场上最多 10 只）' },
   statuesmash:{ name:'石像碎裂', rar:'epic', tags:['proj'], color:'#c9d4e2', icon:'pan',
                 desc:'敌人死亡时 15% 概率碎成 3 枚弹片' },
@@ -226,10 +190,6 @@ const RELICS = {
                 desc:'冲刺回复速度 +35%' },
   overkill:  { name:'溢出斩', rar:'epic', tags:['blast'], color:'#ff9d4d', icon:'mine',
                 desc:'击杀时把这一击 40% 的伤害溅到周围' },
-  moonstep:  { name:'月步', rar:'common', tags:['move','dodge'], color:'#a6ffcb', icon:'shoe',
-                desc:'移速 +10%，闪避 +5%' },
-  harden:    { name:'硬化壳', rar:'common', tags:['tank'], color:'#9fb4c9', icon:'mine',
-                desc:'减伤 +6%，最大生命 +30' },
 
   /* ===== 反伤流派的核心件：把"挨打"做成一条真正的构筑，而不是一件孤零零的遗物 ===== */
   thornheart: { name:'荆棘之心', rar:'epic', tags:['tank'], color:'#ffb0c4', icon:'heart',
@@ -242,12 +202,6 @@ const RELICS = {
   /* ===== 各流派"再来一件"：让非元素路线也有本命遗物 ===== */
   razorwind:  { own:'ranger', name:'锐风之翼', rar:'rare', tags:['proj'], color:'#9fe0ff', icon:'pierce',
                 desc:'弹道 +1，穿透 +1' },
-  bulwark:    { name:'壁垒核心', rar:'rare', tags:['turret'], color:'#ffe066', icon:'turret',
-                desc:'炮台上限 +1' },
-  packalpha:  { name:'头狼', rar:'rare', tags:['summon'], color:'#8ee6b3', icon:'pet',
-                desc:'宠物上限 +2' },
-  focusprism: { name:'聚焦棱镜', rar:'rare', tags:['crit'], color:'#ffd166', icon:'star',
-                desc:'暴击率 +8%，暴击伤害 +25%' },
 
   /* ===== 诅咒：给你更强的，也拿走一些 ===== */
   sacrifice:  { name:'献祭', rar:'curse', tags:['curse'], color:'#ff6b6b', icon:'star',
@@ -362,10 +316,6 @@ const RELICS = {
                 desc:'【献祭】切换流派：宠物死亡时爆炸，并永久 +2% 伤害（最多 10 层），补员更快' },
 
   /* ---------- 血肉：按最大生命百分比输出 ---------- */
-  fleshcage:  { name:'骨肉牢笼', rar:'common', tags:['flesh','tank'], color:'#e05a6f', icon:'flesh',
-                desc:'最大生命 +50，减伤 +5%' },
-  fleshblood: { name:'血之泉', rar:'common', tags:['flesh','heal'], color:'#ff6b8f', icon:'flesh',
-                desc:'最大生命 +20%，击杀回血 +50%' },
   fleshmass:  { name:'血肉增生', rar:'rare', tags:['flesh'], color:'#ff5f7e', icon:'flesh',
                 desc:'最大生命 +30%；每 100 最大生命让全部伤害 +4%（最多 +28%）' },
   fleshpump:  { name:'心跳泵', rar:'rare', tags:['flesh'], color:'#ff7a8f', icon:'flesh',
@@ -405,7 +355,165 @@ const RELICS = {
   shdbreak:   { name:'盾反', own:'engineer', rar:'rare', tags:['shield','blast'], color:'#7ce3ff', icon:'shield',
                 desc:'护盾破碎时对周围造成一次爆发伤害并眩晕 0.6 秒' },
   shdaegis:   { name:'圣盾', own:'engineer', rar:'epic', tags:['shield'], color:'#bff0ff', icon:'shield',
-                desc:'护盾上限 +40；只要护盾还在，伤害 +30%' }
+                desc:'护盾上限 +40；只要护盾还在，伤害 +30%' },
+
+  /* =========================================================
+     6.0 新增 19 件
+     ---------------------------------------------------------
+     规矩：每一件都必须落在一个**已经存在的字段或事件**上。
+     没有第五条公式，也没有"再乘一个隐藏系数"。
+     ========================================================= */
+
+  /* ---- 防御：把"被围住掉血太快"变成算得清的东西 ---- */
+  carapace:  { name:'硬壳', rar:'common', tags:['tank'], color:'#9fb4c9', icon:'shield',
+               desc:'每次受到的伤害 -3 点（不低于 1）' },
+  ironlaw:   { name:'铁律', rar:'epic', tags:['tank'], color:'#c9d4e2', icon:'fist',
+               desc:'单次受到的伤害不超过 15 点' },
+  lastlight: { name:'回光', rar:'epic', tags:['tank','heal'], color:'#ffd166', icon:'heal',
+               desc:'生命跌到 40% 以下时立刻回复 25% 最大生命（60 秒一次）' },
+  repel:     { name:'退敌', rar:'common', tags:['tank','knock'], color:'#b6f0ff', icon:'expand',
+               desc:'生命跌到 60% / 30% 时各击退一次周围敌人（每局各一次）' },
+  windward:  { name:'疾行', rar:'common', tags:['move'], color:'#8ee06e', icon:'shoe',
+               desc:'未受伤时移动速度 +25%，受伤后失效 3 秒' },
+
+  /* ---- 转化：把已经堆的东西接第二条出路 ---- */
+  shadowstep:{ name:'疾影', rar:'rare', tags:['dodge','crit'], color:'#a6ffcb', icon:'boot',
+               desc:'闪避率的 50% 加到暴击率上' },
+  inertia:   { name:'惯性', rar:'common', tags:['move'], color:'#7ce3ff', icon:'momentum',
+               desc:'移动速度超过 110 的部分，每 1 点让全部伤害 +0.8%' },
+  broth:     { name:'煮汤', rar:'rare', tags:['heal'], color:'#ffcf7a', icon:'pot',
+               desc:'每次治疗对 260 内最近的敌人造成治疗量 60% 的伤害' },
+
+  /* ---- 节拍：数得清的触发 ---- */
+  metronome: { name:'三拍', rar:'common', tags:['crit'], color:'#ffd166', icon:'star',
+               desc:'每第 3 次命中造成 150% 伤害' },
+  quadbeat:  { name:'四拍', rar:'rare', tags:['blast'], color:'#ff9d4d', icon:'impact',
+               desc:'每第 4 次命中造成 190% 伤害' },
+  pendulum:  { name:'钟摆', rar:'rare', tags:['blast'], color:'#c7a2ff', icon:'stopwatch',
+               desc:'每 90 秒对全场敌人造成相当于你 8% 最大生命的伤害' },
+  ambush:    { name:'蓄势', rar:'rare', tags:['crit'], color:'#ffd166', icon:'crosshair',
+               desc:'站定 1.2 秒后，下一次攻击造成 160% 伤害（一动就失效）' },
+
+  /* ---- 条件：负面层数 / 残血 ---- */
+  wither:    { name:'凋零', rar:'epic', tags:['elem'], color:'#a6e05a', icon:'vial',
+               desc:'身上有 3 种以上元素的敌人，受到的伤害 +40%' },
+  finisher:  { name:'处刑', rar:'rare', tags:['crit'], color:'#ff6b4b', icon:'execute',
+               desc:'对生命低于 40% 的敌人伤害 +25%' },
+
+  /* ---- 诅咒：高收益配真代价 ---- */
+  glasscannon:{ name:'玻璃大炮', rar:'curse', tags:['curse','blast'], color:'#ff9dc0', icon:'bomb',
+               desc:'全部伤害 +45%，护甲 -20 点' },
+  astral:    { name:'星界', rar:'curse', tags:['curse','tank'], color:'#c7a2ff', icon:'heart',
+               desc:'最大生命 +50%，造成的伤害 -12%' },
+
+  /* ---- 血量三件套：层数（不是固定数值） ---- */
+  heartsteel:{ name:'心之钢', rar:'rare', tags:['flesh','tank'], color:'#ff5f7e', icon:'heart',
+               desc:'每击杀 20 只获得 1 层「钢」，每层 +1 最大生命（线性叠加）' },
+  steelheart:{ name:'钢化你心', rar:'epic', tags:['flesh','heal'], color:'#ff8fb0', icon:'flesh',
+               desc:'【需要心之钢】层数达到 100 时自动翻 3 倍；每层再提供 0.02%/秒 生命回复' },
+  tankengine:{ name:'坦克引擎', rar:'epic', tags:['flesh','tank'], color:'#ffb056', icon:'gear',
+               desc:'每击杀 50 只获得 1 层「引擎」，每层 +2% 基础生命（线性叠加）；被 BOSS / 精英贴身时损失 20% 已获得的引擎生命' },
+  /* 说明：宠物 / 炮台的伤害随时间有一条成长曲线（每 5 分钟 +100%）。
+     这一条以前只写在代码里，现在写进角色说明，玩家算得出来。 */
+  stackragon:{ name:'叠角龙', rar:'epic', tags:['flesh','growth'], color:'#a6e05a', icon:'spire',
+               desc:'所有永久层数的获得量 +50%（心之钢 / 坦克引擎）' },
+
+  /* =========================================================
+     6.0 公共件（第二批）
+     ---------------------------------------------------------
+     全部无上限。平衡靠"触发条件 / 衰减 / 需要特定处境"，
+     不靠封顶，也不靠隐藏倍率。
+     ========================================================= */
+
+  /* ---- 防御：让"被围住"变成可计算的事 ---- */
+  gargoyle:  { name:'石像鬼板甲', rar:'rare', tags:['tank'], color:'#b9c6d6', icon:'shield',
+               desc:'贴身敌人每有 1 只，护甲 +8 点（常驻，不衰减）' },
+  thornmail: { name:'荆棘之甲', rar:'rare', tags:['thorns','tank'], color:'#ffb0c4', icon:'mine',
+               desc:'护甲 +20 点；被贴身时对攻击者反弹（护甲 × 1.2）点伤害' },
+  renewal:   { name:'回春', rar:'common', tags:['heal','tank'], color:'#8ff0a0', icon:'heal',
+               desc:'每 5 秒回复 1.5% 最大生命（常驻，不需要脱战）' },
+  revenge:   { name:'复仇', rar:'rare', tags:['tank','thorns'], color:'#ff9d6b', icon:'fist',
+               desc:'每损失 10% 最大生命，护甲 +4 点' },
+
+  /* ---- 控制：这个游戏真的有的四种控制 ---- */
+  frostring: { name:'霜环', rar:'common', tags:['ice','control'], color:'#8fe8ff', icon:'frost',
+               desc:'贴身 120 范围内的敌人移速 -15%' },
+  gravity:   { name:'引力场', rar:'rare', tags:['control','blast'], color:'#c7a2ff', icon:'hole',
+               desc:'每 6 秒把 200 范围内的敌人向你拉近 40 距离' },
+  quake:     { name:'震地', rar:'rare', tags:['knock','control'], color:'#ffcf7a', icon:'impact',
+               desc:'每 3 秒击退贴身 90 范围内的敌人' },
+  voltpool:  { name:'雷池', rar:'rare', tags:['volt','control'], color:'#ffe066', icon:'bolt',
+               desc:'感电的敌人移速 -20%，且受到感电伤害 +15%' },
+  icebind:   { name:'冰封', rar:'rare', tags:['ice','control'], color:'#9fe0ff', icon:'snowflake',
+               desc:'冰缓持续时间 +0.5 秒；被冰缓的敌人受到的伤害 +12%' },
+
+  /* ---- 成长：靠行为累积 ---- */
+  harvest:   { name:'收获', rar:'common', tags:['growth','util'], color:'#6fdc8c', icon:'gem',
+               desc:'每击杀 10 只，额外掉 1 颗宝石' },
+  ironstomach:{ name:'铁胃', rar:'common', tags:['growth','heal'], color:'#ffcf7a', icon:'jar',
+               desc:'血包回复量 +30%，并且每个血包永久 +2 最大生命' },
+
+  /* ---- 转化：把已经发生的伤害换成资源 ---- */
+  furnace:   { name:'熔炉', rar:'rare', tags:['tank','blast'], color:'#ff9d4d', icon:'flame',
+               desc:'每 10 点护甲，造成的伤害 +0.4%' },
+  bloodtax:  { name:'血税', rar:'rare', tags:['heal','tank'], color:'#ff7a6b', icon:'potion',
+               desc:'每次受伤，把这一口的 12% 转化为治疗' },
+
+  /* ---- 功能 ---- */
+  magnetcore:{ name:'磁力核心', rar:'common', tags:['util'], color:'#c39bff', icon:'magnet',
+               desc:'拾取范围 +80；每拾取 20 颗宝石回复 1% 最大生命' },
+
+  /* =========================================================
+     6.0 专属件（每个角色补到 8 件）
+     ========================================================= */
+
+  /* ---- 平底锅骑士：血量 · 怒气 · 反伤 三条线 ---- */
+  ironheart: { name:'铸铁心脏', own:'knight', rar:'rare', tags:['flesh','rage'], color:'#ff7a6b', icon:'heart',
+               desc:'每 100 最大生命：狂战时长 +0.2 秒、怒气获取 +3%（乘算，随血条一起长大）' },
+  warcry:    { name:'战吼', own:'knight', rar:'common', tags:['rage','knock'], color:'#ffb08a', icon:'expand',
+               desc:'每 12 秒击退贴身 110 范围内的敌人并眩晕 0.6 秒' },
+
+  /* ---- 拖鞋游侠：弹道滚雪球 ---- */
+  thousandblade:{ name:'千刃', own:'ranger', rar:'rare', tags:['proj','multi','crit'], color:'#c9b0ff', icon:'twinblades',
+               desc:'投射弹道 +1；每多 1 条弹道，暴击率 +4%' },
+  tachometer:{ name:'转速表', own:'ranger', rar:'epic', tags:['charge','barrage'], color:'#7ce3ff', icon:'gear',
+               desc:'充能越高冷却越低（最多 -32%）；充能打满时立刻齐射一轮' },
+
+  /* ---- 炮台工程师：把场地变成自己的 ---- */
+  mainframe: { name:'主控台', own:'engineer', rar:'rare', tags:['turret'], color:'#ffe066', icon:'factory',
+               desc:'每座炮台让其它炮台冷却 -9%；炮台到期时原地爆炸（该炮台 2 秒的输出）' },
+  repairarm: { name:'维修臂', own:'engineer', rar:'common', tags:['turret','util'], color:'#9fe8ff', icon:'glove',
+               desc:'炮台存在时间 +50%；炮台落地立刻开火，不用等第一轮冷却' },
+  firegrid:  { name:'火力网格', own:'engineer', rar:'rare', tags:['turret','mark'], color:'#ffd166', icon:'mark',
+               desc:'炮台命中会标记敌人 2.4 秒；炮台对被标记的目标伤害 +25%' },
+
+  /* ---- 宠物饲养员：从一群小狗到三只巨兽 ---- */
+  beastmatk: { name:'兽性元素', own:'keeper', rar:'rare', tags:['pet','elem'], color:'#a6e05a', icon:'vial',
+               desc:'宠物攻击附带你最近一次用过的元素' },
+  behemoth:  { name:'巨兽', own:'keeper', rar:'epic', tags:['pet','beast'], color:'#8ee6b3', icon:'spire',
+               desc:'第一只宠物变成巨兽：生命 ×2.5、伤害 +40%、每次命中把目标撞开' },
+  splitnest: { name:'分巢', own:'keeper', rar:'rare', tags:['pet','beast'], color:'#6fdc8c', icon:'hole',
+               desc:'宠物死亡后 2 秒在离你 200 距离处重生（不需要重新召唤）' },
+  alphawolf: { name:'头狼', own:'keeper', rar:'epic', tags:['pet','beast'], color:'#8ee6b3', icon:'pet',
+               desc:'宠物上限 +2（每种 +1）；宠物伤害 +35%' },
+
+  /* ---- 冰火厨师：一锅端 ---- */
+  pressurepot:{ name:'高压锅', own:'chef', rar:'rare', tags:['elem','blast'], color:'#ff8a3d', icon:'pot',
+               desc:'你的爆炸同时附带火与冰，强制搓出反应' },
+
+  /* ---- 好设计落地：不要新实体、只落在已有字段上的几件 ---- */
+  clover:    { name:'幸运草', rar:'rare', tags:['lucky','crit'], color:'#6fdc8c', icon:'clover',
+               desc:'所有随机判定做两次，取更好的那一次（暴击 / 掉落 / 元素触发）' },
+  grab:      { name:'擒拿', rar:'rare', tags:['knock','control'], color:'#ffcf7a', icon:'glove',
+               desc:'你的眩晕与击退会额外造成 0.8% 最大生命的伤害' },
+  flywheel:  { name:'飞轮', rar:'common', tags:['util'], color:'#7ce3ff', icon:'gear',
+               desc:'每次击杀让全部武器冷却 -0.25 秒' },
+  firstbite: { name:'第一口', rar:'common', tags:['crit'], color:'#ffd166', icon:'bullseye',
+               desc:'每场战斗的第一次命中造成 3 倍伤害' },
+  overflow:  { name:'溢出', rar:'rare', tags:['heal','blast'], color:'#8ff0a0', icon:'heal',
+               desc:'治疗量超过上限的部分，转为对 200 内敌人的伤害' },
+  laststand: { name:'绝境', rar:'epic', tags:['crit'], color:'#ff6b4b', icon:'impact',
+               desc:'生命低于 30% 时，攻击冷却 -35%、移速 +12%' }
 };
 
 const RARITY = {
@@ -421,6 +529,8 @@ function relic(id){ return !!(P && P.relics && P.relics[id]); }
 function relicForChar(id){
   const r = RELICS[id];
   if(!r) return false;
+  /* 【6.0】钢化你心是放大器：没有心之钢它不该出现（原版也是任务型） */
+  if(id === 'steelheart' && !(P && P.relics && P.relics.heartsteel)) return false;
   return !r.own || r.own === (CHAR && CHAR.id);
 }
 function crystalForChar(id){
@@ -448,6 +558,8 @@ function relicStat(){
     chargeRate: 1, overloadDur: 0,
     shieldMax: 0, fleshPct: 0,
     healMul: 1, killHealMul: 1,
+    /* 【6.0】新件用到的量：全是点数与开关，不是倍率堆叠 */
+    flatDR: 0, hitCap: 0, debuffVuln: 0, healToDmg: 0, execMul: 0,
     /* 4.1：冲刺配件。它替代了 4.0 的"破韧支撑件"。
        armor 一律是**护甲点数**（每点 ≈ 1/58 的相对收益），
        不再有 hurtTaken 这种平行的免伤百分比。 */
@@ -460,11 +572,12 @@ function relicStat(){
   if(R.glassheart) { s.maxHpMul *= 0.50; s.critMul += 1.50; }
   if(R.greedpact)  { s.enemySpeed *= 1.20; s.xp *= 1.60; }
   if(R.bloodoath)  { s.dmg *= 1.45; s.regenMul = 0; }
-  if(R.heavycurse) { s.speed *= 0.80; s.armor += 30; s.area *= 1.30; s.blast *= 1.30; }
+  /* 【6.0】沉重诅咒的"范围 +30%"在实测里把单件输出抬到 1.87 倍（全遗物第一）。
+     范围对 AoE 是乘算级的收益，而它的代价只是一个移速 −20%，不成比例。
+     这里只动"范围"一个数（30% → 15%），减伤与移速惩罚都不动。 */
+  if(R.heavycurse) { s.speed *= 0.80; s.armor += 30; s.area *= 1.15; s.blast *= 1.15; }
   /* 混沌骰子是诅咒：不再用 hurtTaken 这个平行字段，直接扣护甲点数 */
   if(R.chaosdice)  { s.armor -= 15; }
-  if(R.luckycoin)  { s.crit += 0.06; }
-  if(R.steadypan)  { s.armor += 6; }
   /* 【P0 修复】尖刺甲的 desc 写着"受到伤害时对周围反伤"，
      applyContact 里也确实有反伤逻辑，但**这里从来没给它加过 thorns**：
      ST.thorns 永远等于 0（除非你额外拿了铁皮罐头结晶），
@@ -478,14 +591,6 @@ function relicStat(){
   if(R.quickstep)   { s.dashCd *= 0.65; }
   if(R.dashboot)    { s.dashExtra += 1; }
   /* ---------- 4.2 新增 18 件 ---------- */
-  if(R.whetstone)   { s.crit += 0.06; }
-  if(R.counterweight){ s.blast *= 1.15; }
-  if(R.springshoe)  { s.speed *= 1.08; }
-  if(R.lodestone)   { s.pickup += 60; }
-  if(R.coldpack)    { s.iceMul0 = (s.iceMul0 || 1) * 1.25; }
-  if(R.pepperjar)   { s.burnMul0 = (s.burnMul0 || 1) * 1.25; }
-  if(R.copperwire)  { s.reactMul *= 1.20; }
-  if(R.venomgland)  { s.elemDur *= 1.25; }
   if(R.anvil)       { s.armor += 14; s.speed *= 0.94; }
   if(R.luckydie)    { s.crit += 0.05; s.critMul += 0.30; }
   if(R.stopwatch)   { s.cdMul *= 0.92; }
@@ -494,32 +599,22 @@ function relicStat(){
   if(R.deepocket)   { s.slots += 1; }
   if(R.bloodsac)    { s.killHealMul *= 1.80; }
   if(R.magazine)    { s.multi += 1; s.cdMul *= 1.06; }
-  if(R.platewall)   { s.armor += 24; }
-  if(R.huntereye)   { s.critMul += 0.45; }
-  if(R.moonstep)    { s.speed *= 1.10; s.dodge += 0.05; }
-  if(R.harden)      { s.armor += 9; s.maxHp += 30; }
   /* 反伤流派的支撑件。thornheart 让反伤可以暴击，是"挨打流"真正的质变点 */
   if(R.thornheart)  { s.thorns = s.thorns * 1.45 + 26; s.thornCrit = 1; }
   if(R.ironvine)    { s.armor += 16; s.thorns = s.thorns * 1.50 + 12; }
   if(R.bloodarmor)  { s.maxHp += 70; s.thorns += 24; }
   /* 各流派的补强件 */
   if(R.razorwind)   { s.multi += 1; s.pierce += 1; }
-  if(R.bulwark)     { s.turretBonus += 1; }
-  if(R.packalpha)   { s.petBonus += 2; }
-  if(R.focusprism)  { s.crit += 0.08; s.critMul += 0.25; }
   if(R.quickboot)  { s.speed *= 1.12; }
   if(R.piercepin)  { s.pierce += 1; }
   if(R.twinbarrel) { s.multi += 1; }
   if(R.longfuse)   { s.blast *= 1.20; }
-  if(R.magnetstone){ s.pickup += 60; }
   if(R.xplens)     { s.xp *= 1.20; }
-  if(R.thickskin)  { s.maxHp += 35; }
   if(R.meltsurge)  { s.reactMul *= 1.50; }
   if(R.frostbite)  { s.reactMul *= 1; }
   if(R.lonestsoul) { s.critMul += 0.80; s.crit -= 0.10; }
   if(R.elementalist){ s.elemDur *= 1.50; }
   if(R.overclock)  { s.turretRate *= 1.50; s.turretLife *= 0.70; }
-  if(R.packleader) { s.petDmg *= 1.35; s.petBonus += 2; }
   if(R.bloodoath)  { s.regenMul = 0; }
 
   /* ---- 3.2 专属件 ---- */
@@ -547,8 +642,6 @@ function relicStat(){
   if(R.ragekettle) { s.armor += 6; }
   if(R.ragecore)   { s.rageGain *= 1.30; s.rageDur += 1.5; }
   /* ---------- 3.0：血肉 ---------- */
-  if(R.fleshcage)  { s.armor += 8; s.maxHp += 50; }
-  if(R.fleshblood) { s.maxHpMul *= 1.20; s.killHealMul *= 1.50; }
   if(R.fleshmass)  { s.maxHpMul *= 1.30; }
   if(R.fleshhammer){ s.fleshPct += 0.015; }
   /* ---------- 3.0：过载 ---------- */
@@ -563,7 +656,26 @@ function relicStat(){
   if(R.shdbattery) { s.shieldMax += 50; }
   if(R.shdbarrier) { s.shieldMax += 90; }
   if(R.shdaegis)   { s.shieldMax += 40; }
-  return s;
+
+  /* ---------- 6.0：新件 ---------- */
+  if(R.carapace)   { s.flatDR += 3; }
+  if(R.ironlaw)    { s.hitCap = Math.max(s.hitCap, 15); }
+  if(R.broth)      { s.healToDmg += 0.60; }
+  if(R.wither)     { s.debuffVuln += 0.40; }
+  if(R.finisher)   { s.execMul += 0.25; }
+  /* 诅咒：一件换两个方向，数值写在卡面上 */
+  if(R.glasscannon){ s.dmg *= 1.45; s.armor -= 20; }
+  if(R.astral)     { s.maxHpMul *= 1.50; s.dmg *= 0.88; }
+
+  /* ---------- 6.0：第二批 ----------
+     只有"必须落进静态数值"的才写在这里；需要每帧/每事件判断的一律
+     在用到的地方直接 relic('id')，不再往 ST 上挂一堆布尔。 */
+  if(R.thornmail)   { s.armor += 20; }
+  if(R.magnetcore)  { s.pickup += 80; }
+  if(R.alphawolf)   { s.petBonus += 2; s.petDmg *= 1.35; }
+  if(R.repairarm)   { s.turretLife *= 1.50; }
+  /* 进化补丁统一在最后叠一次：进化永远不写第二套公式 */
+  return applyEvoPatch(s);
 }
 
 /* ---------------- 4.4 监听器注册（每局开始时执行一次） ---------------- */
@@ -608,11 +720,6 @@ function initRelics(){
     if(relic('ragebrand') && isBerserk() && Math.random() < 0.35) applyElem(e, 'fire', 1.8, h.dmg * 0.25, 'relic');
   });
 
-  /* ---- 闪避类 ---- */
-  on('dodge', function(){
-    if(relic('dodgeprism')) P.guaranteedCrit = true;
-  });
-
   /* ---- 暴击类 ---- */
   on('crit', function(h){ charHook('onCrit', h); });
 
@@ -639,6 +746,19 @@ function initRelics(){
     if(relic('voltcoil') && e.st && e.st.volt > 0 && spend('boom')){
       rings.push({ x:e.x, y:e.y, r0:6, r1:72, life:0.28, max:0.28, col:'#ffe066', w:3 });
       eachNear(e.x, e.y, 72, function(o){ dealDamage(o, 14 + P.level * 4, { src:'r_voltdeath', elem:'volt' }); });
+    }
+    /* 【6.0】火候Ⅱ「燃烧中死亡的敌人爆炸」——之前只是文案，代码里没有 */
+    if(e.st && e.st.fire > 0 && typeof archTier === 'function' && archTier('heat') >= 2 && spend('boom')){
+      explode(e.x, e.y, 54, 18 + P.level * 5, '#ff8a3d', true, 'r_heatdeath');
+    }
+    /* 【6.0】电网Ⅱ「感电敌人死亡时向附近传导感电」——原来写的是"雷区半径 +30%"，没有实现 */
+    if(e.st && e.st.volt > 0 && typeof archTier === 'function' && archTier('grid') >= 2){
+      let gn = 0;
+      eachNear(e.x, e.y, 80, function(o){
+        if(o.dead || gn >= 2) return;
+        gn++;
+        applyElem(o, 'volt', 1.6, 12 + P.level * 3, 'r_gridspread');
+      });
     }
     /* 击杀弹幕 */
     if(relic('killshot') && Math.random() < 0.25 && bullets.length < 600){
@@ -779,6 +899,167 @@ function initRelics(){
 
 /* 每帧跑的遗物逻辑 */
 function tickRelics(dt){
+  /* 进化计数器每帧推进（存活时间 / 狂战秒数 / 护甲峰值） */
+  evoTick(dt);
+  /* =========================================================
+     【6.0】新增件的每帧逻辑
+     ---------------------------------------------------------
+     层数直接用击杀数算，不做"每杀一只 +1"的事件计数：
+     省一次全量监听，也不会因为漏事件而漂移。
+     ========================================================= */
+  if(P){
+    const kills = (state && state.kills) || 0;
+    const lm = relic('stackragon') ? 1.5 : 1;
+    if(relic('heartsteel')){
+      /* 【6.0 标定】层数按击杀数算，而击杀速度本身会随 DPS 涨——
+         所以"每 8 杀 +1"在 10 分钟 1.1 万杀时会给 1400 层。
+         改成每 20 杀 1 层：同样一局约 550 层 = +550 生命，
+         加上坦克引擎约 +1500，叠起来刚好是"基础血的 6 倍"这个量级。 */
+      let n = Math.floor(kills / 20 * lm);
+      if(relic('steelheart') && n >= 100) n *= 3;
+      if(n > (P.steelApplied || 0)){
+        const d = n - (P.steelApplied || 0);
+        P.steelApplied = n;
+        P.maxHp += d; P.hp += d;
+      }
+    }
+    if(relic('tankengine')){
+      const n = Math.floor(kills / 50 * lm);
+      if(n > (P.engineApplied || 0)){
+        const d = n - (P.engineApplied || 0);
+        P.engineApplied = n;
+        /* 【6.0 修复·关键】原来基数写的是 `P.maxHp` —— 拿"当前血量"去乘 2.5%，
+           等于复利：385 层就是 1.025^385 ≈ 1.3 万倍，10 分钟滚到 1759 万血。
+           实测 5 分钟 746 万，整局生存压力被彻底清零。
+           现在基数改成**角色基础生命**：每层 +2.5% 基础血量，是线性叠加，
+           385 层 = 9.6 倍基础（约 +2500 血），与心之钢的 +964 相加是 3500 上下。 */
+        const baseHp = (CHAR && CHAR.hp) || 300;
+        const add = Math.round(baseHp * 0.020 * d);
+        P.engineHp = (P.engineHp || 0) + add;
+        P.maxHp += add; P.hp += add;
+      }
+    }
+    if(relic('steelheart') && P.steelApplied > 0){
+      healPlayer(P.maxHp * 0.0002 * P.steelApplied * dt);
+    }
+    if(P.moving) P.ambushUsed = false;
+
+    /* ---------- 6.0 第二批：周期类 ----------
+       全部是"到点就做一件卡面上写着的事"，没有隐藏乘区。 */
+    /* 回春：常驻回复。这个游戏没有脱战，所以不写"脱战后"——那是空条件 */
+    if(relic('renewal')){
+      P.renewT = (P.renewT === undefined ? 5 : P.renewT) - dt;
+      if(P.renewT <= 0){
+        P.renewT = evoFlag('renewal', 'rnfast') ? 4 : 5;
+        healPlayer(P.maxHp * (evoFlag('renewal', 'rnbig') ? 0.022 : 0.015));
+      }
+    }
+    /* 引力场：把怪往你身上拉。拉过来之后是你的近战 / 爆炸的问题了 */
+    if(relic('gravity')){
+      P.gravT = (P.gravT === undefined ? 6 : P.gravT) - dt;
+      if(P.gravT <= 0){
+        P.gravT = 6;
+        const gr = evoFlag('gravity', 'gvbig') ? 320 : 200;
+        const gp = evoFlag('gravity', 'gvbig') ? 64 : 40;
+        let n = 0;
+        eachNear(P.x, P.y, gr, function(e){
+          if(e.dead || e.big) return;
+          const a = Math.atan2(P.y - e.y, P.x - e.x);
+          e.x += Math.cos(a) * gp;
+          e.y += Math.sin(a) * gp;
+          if(evoFlag('gravity', 'gvdmg') && ST) dealDamage(e, (ST.armorPts || 0) * 2, { src:'gravity' });
+          n++;
+        });
+        if(n && rings.length < 34) rings.push({ x:P.x, y:P.y, r0:gr * 0.5, r1:gr, life:0.26, max:0.26, col:'#c7a2ff', w:2 });
+      }
+    }
+    /* 震地：击退贴身 */
+    if(relic('quake')){
+      P.quakeT = (P.quakeT === undefined ? 3 : P.quakeT) - dt;
+      if(P.quakeT <= 0){
+        P.quakeT = evoFlag('quake', 'qkbig') ? 2 : 3;
+        const qr = evoFlag('quake', 'qkbig') ? 135 : 90;
+        let n = 0;
+        eachNear(P.x, P.y, qr, function(e){
+          if(e.dead || e.big) return;
+          const a = Math.atan2(e.y - P.y, e.x - P.x);
+          e.x += Math.cos(a) * 28;
+          e.y += Math.sin(a) * 28;
+          if(relic('grab')) dealDamage(e, P.maxHp * 0.008, { src:'grab' });
+          n++;
+        });
+        if(n){
+          evoAdd('knock', n);
+          if(rings.length < 34) rings.push({ x:P.x, y:P.y, r0:10, r1:qr, life:0.2, max:0.2, col:'#ffcf7a', w:2 });
+        }
+      }
+    }
+    /* 战吼：击退 + 眩晕（骑士的控场件，12 秒一次） */
+    if(relic('warcry')){
+      P.warT = (P.warT === undefined ? 12 : P.warT) - dt;
+      if(P.warT <= 0){
+        P.warT = 12;
+        const wr = evoFlag('warcry', 'wcbig') ? 165 : 110;
+        eachNear(P.x, P.y, wr, function(e){
+          if(e.dead) return;
+          if(!e.big){
+            const a = Math.atan2(e.y - P.y, e.x - P.x);
+            e.x += Math.cos(a) * 32;
+            e.y += Math.sin(a) * 32;
+          }
+          e.stun = Math.max(e.stun || 0, 0.6);
+          if(relic('grab')) dealDamage(e, P.maxHp * 0.008, { src:'grab' });
+          evoAdd('knock', 1);
+        });
+        if(rings.length < 34) rings.push({ x:P.x, y:P.y, r0:12, r1:wr, life:0.3, max:0.3, col:'#ffb08a', w:3 });
+      }
+    }
+    /* 分巢：把排队的宠物放回场上 */
+    if(P.splitQ && P.splitQ.length){
+      for(let qi = P.splitQ.length - 1; qi >= 0; qi--){
+        const q = P.splitQ[qi];
+        q.t -= dt;
+        if(q.t > 0) continue;
+        P.splitQ.splice(qi, 1);
+        const ang = Math.random() * TAU;
+        spawnPet(q.x + Math.cos(ang) * 12, q.y + Math.sin(ang) * 12, q.lv, q.base, q.life, q.type, null);
+      }
+    }
+
+
+    /* 钟摆：90 秒一次全场伤害 */
+    if(relic('pendulum')){
+      P.pendT = (P.pendT === undefined ? 90 : P.pendT) - dt;
+      if(P.pendT <= 0){
+        P.pendT = 90;
+        const d = P.maxHp * 0.08;
+        if(rings.length < 30) rings.push({ x:P.x, y:P.y, r0:20, r1:260, life:0.5, max:0.5, col:'#c7a2ff', w:4 });
+        for(let i = 0; i < enemies.length; i++) if(!enemies[i].dead) dealDamage(enemies[i], d, { src:'pendulum', dot:true, canCrit:false });
+        sfx('boom');
+      }
+    }
+    /* 回光：残血急救，60 秒一次 */
+    if(relic('lastlight') && P.hp < P.maxHp * 0.40 && state.time - (P.lastlightT || -99) > 60){
+      P.lastlightT = state.time;
+      healPlayer(P.maxHp * 0.25);
+      addText(P.x, P.y - 30, '回光', '#ffd166', 12);
+    }
+    /* 退敌：60% / 30% 两个阈值，各一次 */
+    if(relic('repel')){
+      const r1 = P.hp < P.maxHp * 0.60 && !P.repel60;
+      const r2 = P.hp < P.maxHp * 0.30 && !P.repel30;
+      if(r1 || r2){
+        if(r1) P.repel60 = 1;
+        if(r2) P.repel30 = 1;
+        if(rings.length < 30) rings.push({ x:P.x, y:P.y, r0:8, r1:150, life:0.3, max:0.3, col:'#b6f0ff', w:3 });
+        eachNear(P.x, P.y, 150, function(e){
+          if(e.big || e.dead) return;
+          e.knockPow = Math.max(e.knockPow || 0, 90);
+        });
+      }
+    }
+  }
+
   /* 回响之心原来固定 5 秒齐射一次——每秒 5 发时，这个效果等于噪音。
      改成"每次开火有概率立刻再齐射一轮"（见 64-update），强度自然跟着出手频率长。 */
   if(P.phaseT > 0) P.phaseT -= dt;
@@ -870,6 +1151,19 @@ function tickRelics(dt){
           burst(e.x, e.y, '#ffb0c4', 1, 50, 0);
         });
       }
+    }
+  }
+
+  /* ---------- 3.0：吞噬 · 流派Ⅰ ----------
+     文案写的是"每 20 秒 +1 最大生命"，但从 3.0 起就一直没人实现
+     （Ⅱ 掉血包、Ⅲ 回血都做了，就 Ⅰ 空着）。
+     现在补上：每 20 秒 +1，10 分钟 = +30，属于"慢慢厚起来"，不夸张。 */
+  if(archTier('growth') >= 1){
+    P.growHpT = (P.growHpT === undefined ? 20 : P.growHpT) - dt;
+    if(P.growHpT <= 0){
+      P.growHpT = 20;
+      P.maxHp += 1;
+      P.hp += 1;
     }
   }
 

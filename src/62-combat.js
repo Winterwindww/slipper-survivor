@@ -39,7 +39,15 @@ function explode(x, y, r, dmg, col, light, src){
   burst(x, y, col2, light ? 6 : 14, light ? 110 : 180);
   if(!light){ addShake(1.5); sfx('boom'); }
   const s = src || 'boom';
-  eachNear(x, y, r, function(e){ dealDamage(e, dmg, { src: s }); });
+  /* 高压锅：你的爆炸同时附带火与冰，强制搓出反应 */
+  const pp = (typeof relic === 'function') && relic('pressurepot');
+  eachNear(x, y, r, function(e){
+    dealDamage(e, dmg, { src: s });
+    if(pp && !e.dead){
+      applyElem(e, 'fire', 1.8, dmg * 0.4, s);
+      applyElem(e, 'ice', 1.8, dmg * 0.4, s);
+    }
+  });
   if(spend('boom')) emit('boom', { x, y, r, dmg, src: s });
 }
 
@@ -72,6 +80,20 @@ function killEnemy(e, hit){
     rings.push({ x:e.x, y:e.y, r0:6, r1:40, life:0.22, max:0.22, col:'#ff9d4d', w:2 });
   }
   state.kills++;
+  /* BOSS 死了，领域解除 */
+  if(e.big && state.ban){
+    state.ban = null;
+    showToast('✔ 领域解除');
+  }
+  /* 【6.0】击杀类：宠物击杀计数 / 收获额外宝石 / 飞轮减冷却 */
+  if(hit && (hit.src === 'pet' || hit.src === 'r_pet')) evoAdd('petkill', 1);
+  if(relic('harvest')){
+    P.harvestN = (P.harvestN || 0) + 1;
+    if(P.harvestN % (evoFlag('harvest', 'hv2') ? 5 : 10) === 0) dropGem(e.x, e.y, 1);
+  }
+  if(relic('flywheel') && P.cds){
+    for(const fid in P.cds) P.cds[fid] = Math.max(0, P.cds[fid] - 0.25);
+  }
   /* 【4.2】护盾不再自然回充：每 25 次击杀回 4% 上限（打出来的防御）。
      第一版写的是"每 10 次击杀回 6%"，实测一局 6000 次击杀 = 回满 36 条盾，
      工程师直接变成 0.14 受伤/秒的无敌角色。量级必须按**击杀率**倒推：
@@ -195,12 +217,25 @@ function dropGem(x, y, val){
 
 function dropHeal(x, y, ratio){
   if(drops.length >= 6) return;
+  /* 铁胃：血包回复量 +30%，并且每个血包永久 +2 最大生命 */
+  if(P && relic('ironstomach')){
+    ratio *= 1.30 * (evoFlag('ironstomach', 'is50') ? 1.5 : 1);
+    const add = evoFlag('ironstomach', 'is5') ? 5 : 2;
+    P.maxHp += add;
+    P.hp += add;
+  }
   drops.push({ x, y, kind:'hp', val: ratio, seed: rand(0, 10), life: 0, vx: rand(-14, 14), vy: rand(-14, 14) });
 }
 
 function gainXp(n){
   /* 只在很后期轻踩一脚：构建已经成型，不需要每 10 秒弹一次窗 */
   const damp = P.level > 24 ? Math.max(0.70, 1 - (P.level - 24) * 0.04) : 1;
+  /* 【6.0】拾取计数 + 磁力核心：每 20 颗回 1% 最大生命 */
+  P.gemGot = (P.gemGot || 0) + 1;
+  evoAdd('gem', 1);
+  if(relic('magnetcore') && P.gemGot % 20 === 0){
+    healPlayer(P.maxHp * 0.01 * (evoFlag('magnetcore', 'mc2') ? 2 : 1));
+  }
   P.xp += n * ST.xpMul * damp * (CHAR.xpMul || 1);
   while(P.xp >= P.xpNext){
     P.xp -= P.xpNext;
@@ -215,6 +250,8 @@ function gainXp(n){
 /* ---------------- 玩家受伤 ---------------- */
 /* 反伤伤害：荆棘之心让反伤可以暴击，这是"挨打流"的质变点 */
 function thornsHit(base){
+  /* 共鸣「刺城」（荆棘之甲 + 石像鬼）：被 3 只以上围住时反伤翻倍 */
+  if(typeof hasRes === 'function' && hasRes('thorncity') && (state.contactN || 0) >= 3) base *= 2;
   if(ST && ST.thornCrit && Math.random() < (ST.crit || 0)) return base * (ST.critMul || 1.6);
   return base;
 }
@@ -261,11 +298,26 @@ function hurtPlayer(d, opt){
      闪避刻意**不**并进来：它是"没被打到"（判定根本没发生），
      不是"少挨一点"，两者在玩法上是两件事。 */
   let real = d * (1 - (ST.armor || 0));
+  /* 【6.0】两个新减伤量，都写在卡面上、算法透明：
+       铁律：单次伤害上限（抗爆发）
+       硬壳：每次固定扣点（抗"被 8 只围住"的高频小额） */
+  /* 护盾Ⅱ「有护盾时减伤 +8%」：文案一直写着，代码里从来没有判过。
+     注意它只看"盾还在不在"，盾破了立刻失效——这是有代价的减伤，不是白给的。 */
+  if(P.shield > 0 && typeof archTier === 'function' && archTier('shield') >= 2) real *= 0.92;
+  if(ST.hitCap > 0) real = Math.min(real, ST.hitCap);
+  if(ST.flatDR > 0){
+    /* 共鸣「铁壁」（硬壳 + 铁律）：固定减伤再走一次，等于双重扣点 */
+    const fdr = hasRes('ironwall2') ? ST.flatDR * 2 : ST.flatDR;
+    real = Math.max(1, real - fdr);
+  }
   P.shieldHitT = 0;
 
   /* 3.0 护盾：先于生命值吸收。完全挡住时不掉血、不进重伤反馈。 */
   if(P.shield > 0){
+    const before = real;
     const left = shieldAbsorb(real);
+    const absorbed = before - Math.max(0, left);
+    if(absorbed > 0) evoAdd('shield', absorbed);
     if(left <= 0.01){
       if(!isContact) P.invuln = 0.28;
       rageGainRaw(RES.rageGainHurt * 0.6);
@@ -277,6 +329,13 @@ function hurtPlayer(d, opt){
 
   P.hp -= real;
   P.lastHurt = state.time;
+  /* 【6.0】受伤计数（进化条件）+ 回火叠层 + 血税转治疗 */
+  evoAdd('hurt', 1);
+  if(relic('bloodtax') && real > 0 && !P.taxLock){
+    P.taxLock = 1;
+    healPlayer(real * (evoFlag('bloodtax', 'bt20') ? 0.20 : 0.12));
+    P.taxLock = 0;
+  }
   /* 【3.6】伤害归因统计（不参与玩法） */
   if(state.dmgSrc){
     state.dmgSrc[isContact ? 'contact' : (state.bossHit ? 'boss' : 'hit')] += real;
@@ -311,6 +370,7 @@ function hurtPlayer(d, opt){
       dealDamage(o, refl, { src:'thorns' });
       burst(o.x, o.y, '#ffb0c4', 2, 80, 0);
     });
+    evoAdd('thorn', refl);
     addText(P.x, P.y - 40, '反伤 ' + Math.round(refl), '#ffb0c4', 10);
     rings.push({ x:P.x, y:P.y, r0:8, r1:40, life:0.18, max:0.18, col:'#ffb0c4', w:2 });
   }
@@ -376,7 +436,12 @@ function enemyHpMul(t){
    "最多 18 只"在全是狙击时是灾难，在全是抛掷时又不够。
    现在比的是"远程占全场威胁的比例"，超过 38% 就暂时改刷近战。
    这样远程的存在感是恒定的，而不会随刷到哪种远程而抖。 */
-const RANGED_SHARE = 0.38;
+/* 【6.0】0.38 → 0.30。实测：清得快的角色场上 10~30 只没事，
+   清得慢的会堆到 100+，此时 38% 的远程配额 = 40~56 个射手同时开火，
+   弹幕密度高到走位没有意义（死亡解剖：弱角色 90 秒起每秒吃 8~13 点
+   "其它伤"，几乎全是弹幕）。收掉一档，怪照样多，但堆得再密
+   也不会变成"弹幕雨里站桩"。 */
+const RANGED_SHARE = 0.30;
 
 function pickType(budget){
   const t = state.time;
@@ -480,7 +545,7 @@ function addEnemy(type, px, py){
   /* 速度只跟时间线性长；"追不上玩家"这件事交给每只怪自己的饿意（见 64-update）。
      全局速度地板那种写法会让所有怪一起变快，观感像"集体瞬移"。 */
   const spdMul = 1.06 + Math.min(1.15, t * 0.0019);
-  /* 【5.0】基础伤害重新定过（杂兵 26~58），曲线只到 2.45 倍 ——
+  /* 基础伤害重新定过（杂兵 26~58），曲线只到 2.45 倍 ——
      于是"一口占多少血"从第 1 分钟到第 10 分钟基本恒定。 */
   const dmgNow = def.dmg * atkCurve(t);
   const p = (px === undefined) ? spawnPoint() : { x:px, y:py };
@@ -539,8 +604,14 @@ function spawnWave(){
      每秒拿到 spawnBudget(t) 点额度，每只怪按自己的威胁成本计价，
      买完为止。加一种新怪只要给它定价，不用再去手调权重平衡。
      这样"混编"才有意义：同一笔预算，可以买一群蚂蚁，也可以买一只重甲。 */
-  const interval = Math.max(0.26, 0.86 - t * 0.0011);
-  let budget = spawnBudget(t) * interval * (state.bossAlive ? 2.0 : 1);
+  const interval = Math.max(0.22, 0.62 - t * 0.0009);
+  /* 【6.0】BOSS 在场时小怪刷新 ×2.0 → ×0.5。
+     原来是"BOSS 战压力更大"，但实测效果是：BOSS 出场后清怪节奏被打断，
+     场上从 40~60 只滚到 120~140，40 个远程同时开火——
+     死亡解剖里"厨师/饲养员在 BOSS 出场后 7~12 秒内蒸发"就是这段。
+     BOSS 本身的血量、攻击、领域都没动；变的只是"它打架的时候
+     小怪别再从背后灌人"。 */
+  let budget = spawnBudget(t) * interval * (state.bossAlive ? 0.5 : 1);
   let guard = 0;
   while(budget > 0.75 && enemies.length < cap && guard++ < 48){
     const ty = pickType(budget);
@@ -636,7 +707,7 @@ function spawnEliteAt(x, y, type){
    曲线由 tools/balance.mjs 采集的人群 DPS 中位数反推，保证：
    成型 build 打 10–18 秒，弱 build 打不动 → 该被淘汰就被淘汰。 */
 function bossHpMul(t, idx){
-  /* 【5.0】8.2 × (t/60)^0.97 → 3.6 × (t/60)^1.00。
+  /* 8.2 × (t/60)^0.97 → 3.6 × (t/60)^1.00（6.0 再改为 2.14×(t/60)^1.21）。
      ---------------------------------------------------------
      旧系数在 110 秒（第一个 BOSS）给出 21,500 血：
      当时玩家的实际输出大约 550 DPS，也就是说**第一个 BOSS 要打 40 秒**，
@@ -644,14 +715,48 @@ function bossHpMul(t, idx){
      这是"BOSS 变成了一场 40 秒的消耗战"——玩家感觉不到 BOSS 的威胁，
      只感觉到打得烦；打得久反而把难度转移给了杂兵。
 
-     5.0 的方向是**短而危险的战斗**：
+     当时（上一版）的方向是**短而危险的战斗**：
        · 第一个 BOSS 约 9,500 血 → 成型一半的构筑 15~20 秒打完
        · 10 分钟终局 BOSS 约 13 万血 → 成型的构筑 20 秒左右
        · 单次贴身伤害从 11~19 提到 46~70（见 46-enemies）
      于是"打 BOSS"变成一段需要专心走位的高压时间，而不是磨血。
      曲线仍然跟时间走，不跟玩家数值走——你变强就是打得更快。 */
-  const m = 3.6 * Math.pow(Math.max(30, t) / 60, 1.00);
+  /* 【6.0】3.6 × (t/60)^1.0 → 2.14 × (t/60)^1.21。
+     原曲线是按当年的人群 DPS 中位数反推的，此后武器池收口、流派重做、
+     刷怪曲线调整，实测 150 秒时多数 build 的输出是 700~1400：
+       旧：第一个 BOSS 14,850 血 → 弱 build 要打 17~21 秒，
+           而它的贴身一击 24~36（护甲后），站进怪堆里根本站不住 17 秒
+           ——死亡解剖：厨师/饲养员全部死在 BOSS 出场后 7~12 秒内。
+       新：m=2.14×(t/60)^1.21，过两点 (150s→6.7, 600s→36)：
+           第一个 BOSS 11,055（12 秒上下），150 秒~8 分钟的中间段
+           只轻降，10 分钟终局 BOSS 仍是 59,400，终局压力一分不减。 */
+  const m = 2.14 * Math.pow(Math.max(30, t) / 60, 1.21);
   return m * (1 + Math.min(9, idx) * 0.03);
+}
+
+/* 【6.0】BOSS 领域
+   ---------------------------------------------------------
+   每个 BOSS 出场时随机压一条路线。它不"禁掉"任何东西（那会让纯火厨师直接没法玩），
+   而是把一条路线的收益砍一半——你仍然能打，但这一场不是你的舒适区。
+
+   这是治"一套 build 通吃所有局"最有效的手段：
+   玩家必须准备第二条路，而不是把一条路堆到底。
+*/
+const BOSS_BANS = [
+  { k:'elem', key:'fire',  text:'火焰反应 −50%' },
+  { k:'elem', key:'ice',   text:'冰霜反应 −50%' },
+  { k:'elem', key:'volt',  text:'感电反应 −50%' },
+  { k:'elem', key:'venom', text:'剧毒反应 −50%' },
+  { k:'school', key:'melee',   text:'近战伤害 −35%' },
+  { k:'school', key:'barrage', text:'弹幕伤害 −35%' },
+  { k:'school', key:'fort',    text:'炮台伤害 −35%' },
+  { k:'school', key:'beast',   text:'宠物伤害 −35%' }
+];
+function rollBossBan(){
+  const b = BOSS_BANS[Math.floor(Math.random() * BOSS_BANS.length)];
+  state.ban = { k:b.k, key:b.key, text:b.text };
+  showToast('⛔ 领域：' + b.text);
+  state.flash = Math.max(state.flash, 0.3);
 }
 
 function spawnBoss(keyOverride){
@@ -677,7 +782,7 @@ function spawnBoss(keyOverride){
     /* 【4.0】BOSS 伤害走和杂兵同一条攻击曲线：它是一个绝对量，
        玩家的护甲 / 生命堆多少就吃多少，不再按 maxHp 百分比兜底。
        数值下调是因为"百分比地板"被拿掉了（见 bossDmg）。 */
-    /* 【5.0】BOSS 贴身伤害 46~70（4.x 只有 11~19），
+    /* BOSS 贴身伤害 46~70（4.x 只有 11~19），
        配合 0.9 秒的咬击节奏，站桩吃三下就该死。 */
     dmg: def.dmg * atkCurve(t), xp: def.xp,
     col: def.col, crown: def.crown, ai: def.ai,
@@ -688,6 +793,8 @@ function spawnBoss(keyOverride){
     spawnT: state.time,
     final: false
   });
+  /* 领域：每个 BOSS 换一条，死亡即解除 */
+  rollBossBan();
   /* 【2.6】登场不再"清场"，只把 BOSS 附近的杂兵震退 300 像素。
      原来 boss 一出场就把全场小怪判死，结果 BOSS 反而成了最安全的时间段——
      压力源被 BOSS 自己清掉了。现在小怪留着，只是让出一个圈。 */

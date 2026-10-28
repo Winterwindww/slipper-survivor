@@ -1357,18 +1357,35 @@ function drawParts(){
 }
 
 function drawTexts(){
-  ctx.textAlign = 'center';
+  /* 无头环境下没有 2D 覆盖层：静默跳过，不能因此把整个渲染打断 */
+  if(!txtCtx || !txtCvs || typeof txtCtx.clearRect !== 'function') return;
+  resizeTxtLayer();
+  const cw = txtCvs.width || 0, ch = txtCvs.height || 0;
+  txtCtx.clearRect(0, 0, cw, ch);
+  if(!cw || !ch || !texts.length) return;
+  const sx = cw / W, sy = ch / H;
+  /* 【6.0 修复】文字层是独立画布，必须自己补上相机偏移。
+     第一版漏了这一步：所有飘字画的是"世界坐标"，却按"屏幕坐标"贴在画布上，
+     于是文字整体偏移一个相机位置 —— 玩家看到的就是"暴击从莫名其妙的地方蹦出来"。 */
+  const camX = Math.round(cam.x), camY = Math.round(cam.y);
+  txtCtx.save();
+  txtCtx.scale(sx, sy);
+  txtCtx.translate(-camX, -camY);
+  txtCtx.textAlign = 'center';
   for(let i = 0; i < texts.length; i++){
     const t = texts[i];
-    ctx.globalAlpha = Math.max(0, t.life / t.max);
-    ctx.font = 'bold ' + (t.size || 8) + 'px "Microsoft YaHei", monospace';
-    ctx.fillStyle = 'rgba(60,30,10,.85)';
-    ctx.fillText(t.v, t.x + 1, t.y + 1);
-    ctx.fillStyle = t.col;
-    ctx.fillText(t.v, t.x, t.y);
+    txtCtx.globalAlpha = Math.max(0, t.life / t.max);
+    /* 字号在原基础上 +2：之前 8px 是给"被放大 3 倍的马赛克"看的，
+       现在有独立分辨率，8px 的中文仍然是糊的。 */
+    txtCtx.font = '700 ' + ((t.size || 8) + 2) + 'px "Microsoft YaHei","PingFang SC",sans-serif';
+    txtCtx.lineWidth = 2.6;
+    txtCtx.strokeStyle = 'rgba(14,8,22,.92)';
+    txtCtx.strokeText(t.v, t.x, t.y);
+    txtCtx.fillStyle = t.col;
+    txtCtx.fillText(t.v, t.x, t.y);
   }
-  ctx.globalAlpha = 1;
-  ctx.textAlign = 'left';
+  txtCtx.restore();
+  txtCtx.globalAlpha = 1;
 }
 
 /* 顶部 Boss 血条 */

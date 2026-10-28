@@ -131,6 +131,9 @@ function stInit(e){
 
 /* 给敌人挂元素。dur = 持续秒数，hit = 触发这次元素的伤害（用来换算 DOT 与反应威力） */
 function applyElem(e, elem, dur, hit, src){
+  if(!e || e.dead) return;
+  /* 进化计数器：元素命中总次数（冰封 / 雷池 / 冰柜等件的条件） */
+  evoAdd('elem', 1);
   if(!e || e.dead || !elem) return;
   const st = stInit(e);
   const h = hit || 10;
@@ -141,11 +144,15 @@ function applyElem(e, elem, dur, hit, src){
     return;
   }
   if(elem === 'fire'){
-    st.fire = Math.max(st.fire, dur);
+    /* 【6.0】火候Ⅲ「燃烧持续 +80%」——原来是空档位，现在真的生效 */
+    const fireDur = dur * ((typeof archTier === 'function' && archTier('heat') >= 3) ? 1.8 : 1);
+    st.fire = Math.max(st.fire, fireDur);
     st.fireDmg = Math.max(st.fireDmg, h * 0.30);
   } else if(elem === 'ice'){
-    /* 冷冻Ⅱ：冻结（冰缓）时长 +1 秒 */
-    st.ice = Math.max(st.ice, dur + (ST.freezeTier >= 2 ? 1 : 0));
+    /* 冷冻Ⅱ：冻结（冰缓）时长 +1 秒；冰封：再 +0.5 秒 */
+    const iceBonus = (ST.freezeTier >= 2 ? 1 : 0) + (relic('icebind') ? 0.5 : 0);
+    /* 冰缓时长 = (基础 + 档位加成) × iceMul（冷冻Ⅰ +30% / 冷冻机 +20%） */
+    st.ice = Math.max(st.ice, (dur + iceBonus) * (ST.iceMul || 1));
     /* 控制递减：首次附着给完整时长，之后每次刷新最多只续 0.2 秒。
        原来每次都是 Math.max(slowT, 1.6)，而后期命中频率是每秒几十次，
        等于把减速永久钉死在 1.6 秒——现在只要停手 0.2 秒就会解控。 */
@@ -155,7 +162,37 @@ function applyElem(e, elem, dur, hit, src){
     st.venom = Math.max(st.venom, dur);
     st.venomDmg = Math.max(st.venomDmg, h * 0.24);
   } else if(elem === 'volt'){
-    st.volt = Math.max(st.volt, dur);
+    /* 【6.0】电网Ⅰ「感电持续时间 +40%」——原来是空档位（chainJump 从未被读取） */
+    st.volt = Math.max(st.volt, dur * ((typeof archTier === 'function' && archTier('grid') >= 1) ? 1.4 : 1));
+  }
+  /* =========================================================
+     【6.0 修复】厨师的「调和」：冰火交替会自动补上缺少的那一层
+     ---------------------------------------------------------
+     这句话一直写在角色说明里（40-chars.js:205），但代码里从来没有实现过：
+     reactionMaster 只做了两件事——反应伤害 ×1.3、元素改造卡必出。
+
+     后果：厨师开局只有一把火焰武器，敌人身上永远只有火，凑不出"火+冰"，
+     他从第 1 分钟到第 5 分钟一次反应都打不出来，整条身份是空的。
+     实测他每秒击杀 10.6（骑士 22.1 / 工程师 23.6），五个角色里最弱，
+     死得也最早（142 秒）。
+
+     这里把缺的那一层补上。但不是"每一发都反应"——那等于凭空 ×1.4 伤害。
+     每个目标 0.9 秒最多补一次，也就是"火在烧的时候，冰会自己贴上来一层"，
+     节奏上像是真的在交替，而不是白送一发。
+     只补计时器，不补 dot / 减速：不给隐藏的燃烧伤害，也不给隐藏的控场。
+     ========================================================= */
+  if(CHAR && CHAR.reactionMaster && (elem === 'fire' || elem === 'ice')){
+    const other = elem === 'fire' ? 'ice' : 'fire';
+    if(!(st[other] > 0) && (state.time - (e.masterFillT || -99)) > 0.9){
+      e.masterFillT = state.time;
+      st[other] = 0.9;
+      /* 补上的那层冰是**真的冰**：带标准冰缓（走原有的 0.2 秒刷新上限）。
+         这不是隐藏减伤——它是调和的字面意思：你的火带着寒气。
+         厨师是全角色射程最短的，必须在怪堆和 BOSS 面前站桩，
+         没有任何一种自保手段；实测他三个种子全部死在第一个 BOSS
+         出场后 7 秒（BOSS 一口 24~36，他站不住三口）。 */
+      if(other === 'ice') e.slowT = e.slowT > 0 ? Math.min(1.6, e.slowT + 0.2) : 0.9;
+    }
   }
   react(e, elem, h, src);
 }
@@ -188,6 +225,8 @@ function react(e, elem, hit, src){
   else if(elem === 'venom' && st.volt > 0) kind = 'conduct';
   if(!kind) return;
   if(!spend('react')) return;
+  evoAdd('react', 1);
+  if(P) P.lastElem = elem;
 
   /* 元素使：反应不再有连锁冷却（0.14 → 0.04） */
   st.reactCd = relic('elementalist') ? 0.04 : 0.14;
@@ -199,7 +238,18 @@ function react(e, elem, hit, src){
   const master = !!(CHAR && CHAR.reactionMaster);
   /* 融化冲击：反应伤害 +50% */
   const surge = relic('meltsurge') ? 1.5 : 1;
-  const mul = (REACT_MUL[kind] || 1) * (master ? 1.30 : 1) * surge * (archTier('elem') >= 2 ? 1.20 : 1);
+  /* 【6.0】BOSS 领域：被压的那一族反应打五折。
+     不是禁用——你仍然能打，但这一场不是这条路的舒适区。 */
+  let banMul = 1;
+  if(state.ban && state.ban.k === 'elem'){
+    const bk = state.ban.key;
+    const hit = (bk === 'fire'  && (kind === 'melt' || kind === 'toxblast'))
+             || (bk === 'ice'   && (kind === 'melt' || kind === 'superconduct'))
+             || (bk === 'volt'  && (kind === 'superconduct' || kind === 'conduct'))
+             || (bk === 'venom' && (kind === 'toxblast' || kind === 'conduct'));
+    if(hit) banMul = 0.5;
+  }
+  const mul = (REACT_MUL[kind] || 1) * (master ? 1.30 : 1) * surge * (archTier('elem') >= 2 ? 1.20 : 1) * banMul;
   /* 反应伤害原来是"触发伤害 ×1.15"，还要再溅射一圈 55%~60%。
      等于元素构筑白拿一发群体版自己的主武器，结算面板里反应常年第一，
      武器反而像配件。现在降到 ×0.55：反应负责控场 / 清残血 / 连接。 */
@@ -337,6 +387,8 @@ function dealDamage(e, amount, opt){
     const overloadMul = (P && P.overload > 0 && (RES.overloadDmg || 0) > 0)
       ? (1 + RES.overloadDmg) : 1;
     dmg = amount * ST.dmgMul * (opt.mul === undefined ? 1 : opt.mul) * charDamageMul(e, opt) * schoolDamageMul(e, src) * overloadMul;
+    /* BOSS 领域：被压流派 −35%。查的是武器自己的 school，不是"猜" */
+    if(ST.banSchool && WEAPONS[src] && WEAPONS[src].school === ST.banSchool) dmg *= 0.65;
     if(P && P.bloodrageOn) dmg *= 1.2;
     /* 3.0 资源态增伤：狂战 / 超载 / 圣盾 */
     if(P && P.berserk > 0) dmg *= (ST.berserkDmg || 1.3);
@@ -357,7 +409,10 @@ function dealDamage(e, amount, opt){
     if(P && P.guaranteedCrit){ crit = true; P.guaranteedCrit = false; }
     else {
       const cc = (opt.critChance !== undefined ? opt.critChance : ST.crit) + (sharp ? 0.12 : 0) + sharpener * 0.015;
-      if(Math.random() < cc) crit = true;
+      /* 幸运草：随机判定做两次取更好的（暴击从 cc 变成 1-(1-cc)^2） */
+      let roll = Math.random();
+      if(relic('clover')) roll = Math.min(roll, Math.random());
+      if(roll < cc) crit = true;
     }
   }
   /* 处刑者：残血目标必定暴击 */
@@ -385,7 +440,7 @@ function dealDamage(e, amount, opt){
       }
     }
   }
-  /* 【5.0】条件型改造（先手 / 处决 / 远射 / 猎杀 / 标记）。
+  /* 条件型改造（先手 / 处决 / 远射 / 猎杀 / 标记）。
      它们是"对什么目标更狠"，而不是"整体再多加 20%"——
      同一把武器在不同局面下的强弱差异，才是构筑的乐趣来源。 */
   if(typeof modCondMul === 'function' && !opt.dot && !opt.trueDmg) dmg *= modCondMul(src, e);
@@ -411,8 +466,35 @@ function dealDamage(e, amount, opt){
   }
   /* 冷冻Ⅲ：打被冰住的目标 +40%（厨师的"冻住再打碎"） */
   if(ST.frozenVuln && e.st && e.st.ice > 0) dmg *= 1 + ST.frozenVuln;
+  /* 火力网格：炮台打自己标记的目标 +25%（进化后 +40%，且你也吃一半） */
+  if(e.fgMarkAt && state.time - e.fgMarkAt < 2.4 && relic('firegrid')){
+    if(src === 'turret') dmg *= evoFlag('firegrid', 'fg40') ? 1.40 : 1.25;
+    else if(evoFlag('firegrid', 'fgself')) dmg *= 1.15;
+  }
+  /* 冰封：被冰缓的敌人受到的伤害 +12%（解锁条件写在卡面上：冰封持续 +0.5 秒） */
+  if(relic('icebind') && e.st && e.st.ice > 0) dmg *= 1.12;
   /* 电网Ⅲ：感电目标受到的所有伤害 +15% */
   if(ST.gridTier >= 3 && e.st && e.st.volt > 0) dmg *= 1.15;
+  /* 第一口：每局第一次命中 3 倍 */
+  if(relic('firstbite') && P && !opt.dot && !P.firstBiteUsed){
+    P.firstBiteUsed = 1;
+    dmg *= 3;
+    addText(e.x, e.y - e.r - 12, '第一口！', '#ffd166', 12);
+  }
+  /* 【6.0】节拍类：只统计"直接命中"，持续伤害不刷计数，否则永远停在倍率上 */
+  if(!opt.dot && P){
+    P.hitN = (P.hitN || 0) + 1;
+    if(relic('metronome') && P.hitN % 3 === 0) dmg *= 1.5;
+    if(relic('quadbeat') && P.hitN % 4 === 0) dmg *= 1.9;
+    if(relic('ambush') && !P.ambushUsed && !P.moving && (P.stillT || 0) > 1.2){
+      dmg *= 1.6;
+      P.ambushUsed = true;
+    }
+  }
+  /* 凋零：身上 3 种以上元素的敌人受到伤害 +40% */
+  if(ST.debuffVuln > 0 && elemKinds(e) >= 3) dmg *= 1 + ST.debuffVuln;
+  /* 处刑：残血敌人 +25% */
+  if(ST.execMul > 0 && e.hp < e.maxHp * 0.40) dmg *= 1 + ST.execMul;
   if(e.vulnMul && e.vulnMul !== 1) dmg *= e.vulnMul;
 
   /* 遗物伤害占比上限。
@@ -487,6 +569,16 @@ function dealDamage(e, amount, opt){
   DMG[src] = (DMG[src] || 0) + real;
   if(WEAPONS[src]) state.wpnAcc = (state.wpnAcc || 0) + real;   /* 武器每秒输出，供遗物上限参考 */
   state.hitCount = (state.hitCount || 0) + 1;
+  /* 弹幕Ⅲ「每 10 次命中让一把武器立刻装填」：这条也一直没实现。
+     只装填"正在冷却且不是刚开火的那把"，避免无限连发自己。 */
+  if(state.hitCount % 10 === 0 && typeof archTier === 'function' && archTier('barrage') >= 3 && P && P.cds){
+    let best = null, bestT = 0;
+    for(const wid in P.cds){
+      const v = P.cds[wid] || 0;
+      if(v > bestT){ bestT = v; best = wid; }
+    }
+    if(best) P.cds[best] = 0;
+  }
   state.dmgDealt = (state.dmgDealt || 0) + real;
   state.dmgAcc = (state.dmgAcc || 0) + real;
 
@@ -494,7 +586,7 @@ function dealDamage(e, amount, opt){
   e.flash = 0.07;
   e.hitT = 0.1;
 
-  /* 【5.0】「标记」与「波及」在伤害落地之后结算。
+  /* 「标记」与「波及」在伤害落地之后结算。
      波及只做一层（opt.splash 用来掐断递归），
      否则 A 溅 B、B 溅 C 会在 200 只怪的场面里炸成连锁。 */
   if(!opt.dot && !opt.trueDmg && WEAPONS[src]){

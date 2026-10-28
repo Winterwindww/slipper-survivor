@@ -503,6 +503,22 @@ function applyContact(dt){
     if(d < (e.r + P.r) * 1.55) near.push(e);
   }
   state.contactN = near.length;
+  /* 【6.0】坦克引擎：被 BOSS / 精英贴身时损失 20% 已获得的引擎生命（2 秒最多一次）。
+     原版是"阵亡掉层"，本游戏一次死亡就结束，所以换成"别硬吃 BOSS 的贴身"。 */
+  if(near.length && typeof relic === 'function' && relic('tankengine') && state.time - (P.engCutT || -99) > 2){
+    for(let i = 0; i < near.length; i++){
+      if(!(near[i].big || near[i].elite)) continue;
+      P.engCutT = state.time;
+      const lose = Math.round((P.engineHp || 0) * 0.2);
+      if(lose > 0){
+        P.engineHp -= lose;
+        P.maxHp = Math.max(40, P.maxHp - lose);
+        P.hp = Math.min(P.hp, P.maxHp);
+        addText(P.x, P.y - 28, '引擎 -20%', '#ffb056', 11);
+      }
+      break;
+    }
+  }
   state.biteN = 0;
   if(!near.length) return;
 
@@ -523,16 +539,18 @@ function applyContact(dt){
     }
   }
 
-  /* 【5.0】接触伤害：每 1.1 秒结算一次，Σ(贴身怪的 dmg)，再过一次护甲。
+  /* 接触伤害：每 0.40 秒结算一次，Σ(贴身怪的 dmg)，再过一次护甲。
      ---------------------------------------------------------
      规则没有变，还是"被几只围就吃几份"——贴 10 只就是 10 份，
      该跑就得跑。变的是**数值**：
        · 单只杂兵一口 18~42 点（旧表 7~20），打在 300 血身上看得见
        · 节奏 0.45 → 1.1 秒，同样的每秒压力，但每一口都数得清
-     5.0 没有给接触伤害加任何上限、下限或隐藏系数，
+     接触伤害没有上限、下限或隐藏系数，
      单纯是把"单口多大"和"多久一口"这两个数重排了一遍。 */
-  /* 冲刺的无敌窗口内不吃接触伤害：这是冲刺存在的意义 */
-  if(P.invuln > 0) return;
+  /* 冲刺的无敌窗口内不吃接触伤害：这是冲刺存在的意义。
+     【6.0】只认冲刺自己的无敌（dashIvyT）。弹幕 / 陷阱给的 0.30 秒无敌
+     不该顺手把接触伤害也挡掉——那会变成"挨一发子弹 → 顶着怪群走 0.3 秒"。 */
+  if((P.dashIvyT || 0) > 0) return;
 
   let sum = 0;
   for(let i = 0; i < near.length; i++){
@@ -547,7 +565,7 @@ function applyContact(dt){
 
   /* 玩家侧的受伤间隔：第一次贴上**立刻**结算，之后每 contactTick 一次。
      ---------------------------------------------------------
-     【5.0 修复】冷却必须在主循环里按真实时间走（见 64-update 的 contactTick），
+     修复：冷却必须在主循环里按真实时间走（见 64-update 的 contactTick），
      不能只在"贴身时"递减。
      旧的写法有两个后果：
        · 你挨过一口之后离开，冷却停在 0.9 秒不动；

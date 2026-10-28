@@ -106,8 +106,6 @@ function refreshSchools(){
   if(top && top.id !== P.topSchool){
     P.topSchool = top.id;
     if(top.share >= 0.5){
-      showToast('流派成型：' + top.name);
-      state.flash = Math.max(state.flash, 0.16);
     }
   }
   recomputeSchoolTiers();
@@ -166,6 +164,8 @@ function activeLinks(){
     const t = P.scT[sid] || 0;
     if(!t) continue;
     const m = SCHOOL_MECH[sid];
+    /* 【6.0】没有机制的流派（例如弹幕）不再有说明条目，跳过即可 */
+    if(!m) continue;
     if(!m) continue;
     out.push({ id:sid, name:m.icon + ' ' + m.name, tier:t, desc:m.desc });
   }

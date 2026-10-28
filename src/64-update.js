@@ -6,6 +6,17 @@ function updateGame(dt){
   resetBudget();
   resFrameReset(dt);
 
+  /* 【6.0】动态属性重算（4 Hz）
+     ---------------------------------------------------------
+     石像鬼（贴身数）、复仇（损失生命）、血怒、熔炉（护甲）、复利（时间）、
+     绝境（残血）这几件的数值**每帧都在变**，而 getStats 原本只在
+     选卡 / 升级时调用 —— 于是它们的卡面写着"动态"，实际是一个固定值。
+
+     这里按 4Hz 重算：足够跟上贴身数量的变化，又不会每帧遍历 200 件遗物。
+     （不是新增乘区，只是把已经写好的公式接上它的输入。） */
+  state.stT = (state.stT || 0) + dt;
+  if(state.stT >= 0.25){ state.stT = 0; ST = getStats(); }
+
   /* --- 玩家移动 --- */
   let mx = 0, my = 0;
   if(keys['a'] || keys['arrowleft'])  mx--;
@@ -39,7 +50,7 @@ function updateGame(dt){
   /* 【4.0】冲刺：被围时唯一的解，也是"顺势"输出的来源 */
   dashTick(dt);
 
-  /* 【5.0】接触伤害的冷却按真实时间流逝。
+  /* 接触伤害的冷却按真实时间流逝。
      放在这里（而不是 applyContact 里）是为了让"离开接触"不冻结冷却：
      撞上去的第一口永远立刻结算，之后才是每 contactTick 一次。 */
   if(P.contactT > 0) P.contactT = Math.max(0, P.contactT - dt);
@@ -52,7 +63,7 @@ function updateGame(dt){
      现在：脱战只能把你从"快死"拉回"还能再打一波"，不能当饭吃。 */
   if(P.lastHurt === undefined) P.lastHurt = -99;
   if(state.time - P.lastHurt > 4.5 && P.hp < P.maxHp){
-    /* 【5.0】脱战恢复改走治疗池。
+    /* 脱战恢复改走治疗池。
        它原来是 healRaw（不受预算限制），而它是**按最大生命百分比**给的：
        1300 血的骑士脱战 5 秒就有 2.4 HP/秒的免费回复，叠在治疗桶之上，
        等于一个隐形血包。被动治疗只有一条路：healPlayer。 */
@@ -259,6 +270,19 @@ function updateGame(dt){
       else e.hunt = Math.max(0, (e.hunt || 0) - dt / 2.2);
       if(e.hunt > 0) e.speed *= 1 + 1.0 * e.hunt;
     }
+    /* 【6.0】三条"敌人变慢 / 变快"的来源，全部写在卡面上：
+         贪婪契约：全体 +20%（这是一直存在但从来没被读取的死字段，现在真的生效）
+         霜环：贴身 120 内 -15%
+         雷池：感电的 -20% */
+    (function(){
+      let em = (ST && ST.enemySpeed) ? ST.enemySpeed : 1;
+      if(relic('frostring')){
+        const dd2 = dist(e.x, e.y, P.x, P.y);
+        if(dd2 < 120) em *= 1 - (evoFlag('frostring', 'fs25') ? 0.25 : 0.15);
+      }
+      if(relic('voltpool') && e.st && e.st.volt > 0) em *= 0.80;
+      if(em !== 1) e.speed *= em;
+    })();
     tickStatus(e, dt);
     if(e.dead) continue;
     updateEnemyAI(e, dt);
@@ -407,7 +431,7 @@ function updateGame(dt){
     let trig = false;
     eachNear(m.x, m.y, m.r + 4, function(){ trig = true; });
     if(trig){
-      explode(m.x, m.y, m.boom, m.dmg, '#ff5f8f', true, 'mine');
+      explode(m.x, m.y, m.boom, m.dmg, '#ff5f8f', true, m.src || 'mine');
       if(m.evo) addHazard(m.x, m.y, m.boom * 0.65, 2.0, 4, true);
       if(hasMod('mine', 'venom')) addHazard(m.x, m.y, m.boom * 0.6, 2.4, 5, false);
       mines.splice(i, 1);
@@ -585,17 +609,23 @@ function updateBullets(dt){
     b.life -= dt;
 
     /* 回旋镖：飞到一半掉头追玩家 */
-    if(b.type === 'boomerang' && !b.returning && b.trav !== undefined && b.range && b.trav > b.range * 0.55){
+    if(b.type === 'boomerang' && !b.returning && b.range && (b.trav || 0) > b.range * (b.back || 0.9)){
       b.returning = true;
       b.hitSet.clear();
+      /* 回程换一个亮色，让"第二趟"在屏幕上看得出区别 */
+      b.col = '#eafff3';
+      b.vx *= 1.18;
+      b.vy *= 1.18;
     }
     if(b.returning){
       const a = Math.atan2(P.y - b.y, P.x - b.x);
       const sp = Math.hypot(b.vx, b.vy);
-      b.vx = lerp(b.vx, Math.cos(a) * sp, 0.12);
-      b.vy = lerp(b.vy, Math.sin(a) * sp, 0.12);
+      /* 转向从 0.12 提到 0.30：原来拐得太慢，玩家一走动它就绕大圈追不上，
+         最后超时消失——这也是"不会飞回来"的一部分。 */
+      b.vx = lerp(b.vx, Math.cos(a) * sp, 0.30);
+      b.vy = lerp(b.vy, Math.sin(a) * sp, 0.30);
       if(!b.backDone){ b.backDone = true; b.dmg *= (b.backMul || 1.3); }
-      if(dist(b.x, b.y, P.x, P.y) < 20){ bullets.splice(i, 1); continue; }
+      if(dist(b.x, b.y, P.x, P.y) < 22){ bullets.splice(i, 1); continue; }
     }
 
     b.x += b.vx * dt;
@@ -640,7 +670,27 @@ function updateBullets(dt){
          跳弹遗物生成的子弹命中时若不带上这个标记，会再触发一次跳弹，
          于是 1 → 2 → 4 → 8 指数繁殖到 700 发上限——这就是"选了弹射就卡死"。
          现在跳弹只生一代。 */
-      dealDamage(e, b.dmg, { src: b.src || 'misc', elem: null, bounce: !!b.bounce });
+      /* 【6.0】贯穿衰减：穿透不再只是"能打到第几个"，它同时决定"打到之后还剩多少"。
+         ---------------------------------------------------------
+         旧规则：`hitCount > pierce` 就消失，穿透后的伤害一分不减。
+         于是"穿透 +1"对 44 把武器完全无效、对 3 把自带上限的武器也无效，
+         这个属性在三选一里长期是空卡。
+
+         现在：
+           基础保留率 = 0.85 + 穿透点 × 0.03（最多 0.99）
+           穿甲Ⅱ「穿透不衰减」= 固定 1.00
+           穿甲Ⅲ「越穿越狠」= 改成 1.10（每多穿一个目标反而更痛）
+         保留率按命中次数取幂，所以第 1 个目标永远 100%。 */
+      let bdmg = b.dmg;
+      if((b.hitCount || 0) > 1){
+        const pt = (typeof ST !== 'undefined' && ST && ST.pierce) || 0;
+        const pTier = (typeof archTier === 'function') ? archTier('pierce') : 0;
+        let keep = Math.min(0.99, 0.85 + pt * 0.03);
+        if(pTier >= 2) keep = 1.00;
+        if(pTier >= 3) keep = 1.10;
+        bdmg *= Math.pow(keep, b.hitCount - 1);
+      }
+      dealDamage(e, bdmg, { src: b.src || 'misc', elem: null, bounce: !!b.bounce });
       /* 【2.6】弹射跳不再挂元素：弹射是"伤害扩散"，不该顺手把元素触发率
          乘上弹射次数——那正是"选了弹射之后连锁到卡死"的一半原因。 */
       if(b.elem && b.elem.length && !b.bounced) elemOnHit(e, b.elem, b.dmg, b.src);

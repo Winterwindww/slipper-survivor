@@ -10,6 +10,23 @@ const cvs = $('game');
 const ctx = cvs.getContext('2d');
 ctx.imageSmoothingEnabled = false;
 
+/* 文字覆盖层：按设备像素比渲染，和主画布同尺寸（CSS） */
+const txtCvs = document.getElementById('txt');
+const txtCtx = txtCvs ? txtCvs.getContext('2d') : null;
+function resizeTxtLayer(){
+  /* 无头测试环境的 canvas 没有布局信息，这里必须能安全跳过 */
+  if(!txtCvs || !cvs || typeof cvs.getBoundingClientRect !== 'function') return;
+  const r = cvs.getBoundingClientRect();
+  if(!r.width || !r.height) return;
+  const dpr = Math.min(2, window.devicePixelRatio || 1);
+  const w = Math.max(1, Math.round(r.width * dpr));
+  const h = Math.max(1, Math.round(r.height * dpr));
+  if(txtCvs.width !== w || txtCvs.height !== h){ txtCvs.width = w; txtCvs.height = h; }
+  txtCvs.style.width = r.width + 'px';
+  txtCvs.style.height = r.height + 'px';
+}
+window.addEventListener('resize', resizeTxtLayer);
+
 const W = 640, H = 360;
 const ARENA = { w: 1720, h: 1000 };
 

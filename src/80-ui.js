@@ -13,6 +13,12 @@ function updateHUD(){
   $('xpfill').style.width = Math.min(100, (P.xp / P.xpNext) * 100) + '%';
   $('timer').textContent = fmtTime(state.time);
   $('lvbox').textContent = 'Lv.' + P.level;
+  /* 【6.0】BOSS 领域：让玩家看得见这一场哪条路被压了 */
+  const bt = $('banTag');
+  if(bt){
+    if(state.ban){ bt.textContent = '⛔ ' + state.ban.text; bt.style.display = 'block'; }
+    else bt.style.display = 'none';
+  }
   if($('killnum').textContent !== String(state.kills)){
     $('killnum').textContent = state.kills;
     const nowT = performance.now();
@@ -309,10 +315,10 @@ function miniEl(kind, id, lv, mods){
    角色选择
    ========================================================= */
 const CHAR_SELECT_COPY = {
-  ranger:{ blurb:'远程连射，越打越准。', perk:'投射武器额外 +1 弹道。' },
+  ranger:{ blurb:'远程连射，越打越准。', perk:'投射武器额外 +1 弹道。「穿透」只有你能堆：一发子弹多穿几个敌人，专门打成一串的怪。' },
   knight:{ blurb:'平底锅近战，挨打攒怒。', perk:'怒气更快，狂战更强。' },
-  engineer:{ blurb:'部署炮台，铺出火力网。', perk:'炮台上限 +2，彼此加速。' },
-  keeper:{ blurb:'召唤伙伴，组建小兽群。', perk:'宠物上限 +3。' },
+  engineer:{ blurb:'部署炮台，铺出火力网。', perk:'炮台没有上限，但会到期消失；炮台越多彼此冷却越快。炮台伤害随存活时间成长（每 5 分钟 +100%）。' },
+  keeper:{ blurb:'召唤伙伴，组建小兽群。', perk:'开局 3 只，每种最多 4 只；小狗撕咬会扫到身边的怪。宠物伤害随存活时间成长（每 5 分钟 +100%）。' },
   chef:{ blurb:'冰火交替，打出元素反应。', perk:'多元素目标受到更多伤害。' }
 };
 function buildCharSelect(){
@@ -387,6 +393,41 @@ let curChoices = [];
 let swapBackup = null;      /* 换武器确认时暂存的上一屏卡，取消可以回去 */
 
 /* 换武器：必须玩家自己点开 + 自己选放弃哪把，绝不自动替换 */
+/* 【6.0】遗物进化的 A/B 二选一：点开再选，本局不可逆 */
+function openRelicEvoConfirm(rid){
+  const r = RELICS[rid], e = EVO[rid];
+  if(!r || !e) return;
+  swapBackup = curChoices.slice();
+  const list = [
+    { kind:'revoTo', id:rid, pick:'a', name:e.a.name, color:'#ffd166', icon:r.icon,
+      tag:'进化 A · ' + r.name, lvText:'本局不可逆',
+      desc:e.a.text, hint:'达成「' + e.l + '」' },
+    { kind:'revoTo', id:rid, pick:'b', name:e.b.name, color:'#ffc46b', icon:r.icon,
+      tag:'进化 B · ' + r.name, lvText:'本局不可逆',
+      desc:e.b.text, hint:'达成「' + e.l + '」' },
+    { kind:'swapBack', id:'back', name:'先不选', color:'#a99ac2', icon:'star',
+      tag:'返回', lvText:'保留进化机会', desc:'回到刚才的三选一。进化机会不会消失，下次还会出现', hint:'' }
+  ];
+  curChoices = list;
+  renderCards('cards', list);
+}
+
+function applyRelicEvo(rid, pick){
+  const e = EVO[rid];
+  if(!e) return;                       /* 没有进化位的件，直接忽略，不能崩 */
+  if(!P.relicEvo) P.relicEvo = {};
+  if(P.relicEvo[rid]) return;
+  P.relicEvo[rid] = pick;
+  const b = pick === 'a' ? e.a : e.b;
+  showToast('⚡ ' + RELICS[rid].name + ' → ' + b.name);
+  addText(P.x, P.y - 34, b.name, '#ffd166', 14);
+  sfx('awaken');
+  state.flash = 0.5;
+  state.shake = Math.max(state.shake, 4);
+  rings.push({ x:P.x, y:P.y, r0:10, r1:80, life:0.45, max:0.45, col:'#ffd166', w:4 });
+  burst(P.x, P.y, '#ffd166', 22, 170, 0);
+}
+
 function openSwapConfirm(newId){
   const w = WEAPONS[newId];
   if(!w) return;
@@ -473,6 +514,19 @@ function upgradePhase(){
   if(act >= 3 || lv >= 22) return 3;
   if(act >= 2 || lv >= 7) return 2;
   return 1;
+}
+
+
+/* 【6.0 修复】保底类替换用的"可被顶掉的槽位"。
+   之前三个保底（遗物保底 / 本命遗物保底）都直接写 out[2] 或 out[末位]，
+   会把刚兜底进去的"新武器"卡顶掉——这就是"明明有空槽，
+   却连续十几级都不给新武器"的原因（实测 12 次抽卡只有 6 次有新武器）。 */
+function pitySlot(out){
+  for(let i = out.length - 1; i >= 0; i--){
+    const k = out[i].kind;
+    if(k !== 'wnew' && k !== 'swapNew' && k !== 'revo' && k !== 'revoTo') return i;
+  }
+  return -1;
 }
 
 function rollUpgrades(n){
@@ -620,10 +674,11 @@ function rollUpgrades(n){
     if(!rarityAllowed(r.rar)) continue;
     if(!relicForChar(id)) continue;
     const rw = RARITY[r.rar].weight / 46 * (r.own ? 1.6 : 1);
+    const cat = relicCatOf(id);
     pool.push({
       kind:'relic', id, name:r.name, color:RARITY[r.rar].color, icon:r.icon,
       rarity: r.rar,
-      tag: RARITY[r.rar].name + '遗物',
+      tag: cat.mark + ' ' + cat.name + ' · ' + RARITY[r.rar].name,
       lvText: r.rar === 'curse' ? '⚠ 有代价' : '获得遗物',
       desc: r.desc,
       hint: r.tags.indexOf('curse') >= 0 ? '✦ 强力，但要付出代价'
@@ -725,11 +780,14 @@ function rollUpgrades(n){
       cands.push(id);
     }
     if(cands.length){
-      const id = pickOne(cands);
-      const r = RELICS[id];
-      out[2] = { kind:'relic', id, name:r.name, color:RARITY[r.rar].color, icon:r.icon,
-        tag: RARITY[r.rar].name + '遗物', lvText:'获得遗物', desc:r.desc,
-        hint: relicTagHint(r.tags) };
+      const ps = pitySlot(out);
+      if(ps >= 0){
+        const id = pickOne(cands);
+        const r = RELICS[id];
+        out[ps] = { kind:'relic', id, name:r.name, color:RARITY[r.rar].color, icon:r.icon,
+          tag: RARITY[r.rar].name + '遗物', lvText:'获得遗物', desc:r.desc,
+          hint: relicTagHint(r.tags) };
+      }
     }
   }
   /* 【3.0】本命遗物保底：到 Lv3 还没见到任何"只属于这个角色"的遗物，
@@ -747,15 +805,36 @@ function rollUpgrades(n){
         cands.push(id);
       }
       if(cands.length){
-        const id = pickOne(cands);
-        const r = RELICS[id];
-        out[out.length - 1] = {
-          kind:'relic', id, name:r.name, color:RARITY[r.rar].color, icon:r.icon,
-          rarity:r.rar, tag:'⚡ 本命遗物', lvText:'仅限 ' + CHAR.name,
-          desc:r.desc, hint:'✦ 只属于你的专属遗物'
-        };
+        const ps = pitySlot(out);
+        if(ps >= 0){
+          const id = pickOne(cands);
+          const r = RELICS[id];
+          out[ps] = {
+            kind:'relic', id, name:r.name, color:RARITY[r.rar].color, icon:r.icon,
+            rarity:r.rar, tag:'⚡ 本命遗物', lvText:'仅限 ' + CHAR.name,
+            desc:r.desc, hint:'✦ 只属于你的专属遗物'
+          };
+        }
       }
     }
+  }
+  /* 【6.0】遗物进化：达成的必进三选一（每次最多 1 张，避免一次刷三张进化）
+     它不是"自动触发"——A/B 本身就是一次抉择。 */
+  const readyEvos = evoReadyList();
+  if(readyEvos.length && out.length){
+    const rid = pickOne(readyEvos);
+    const rr = RELICS[rid], ee = EVO[rid];
+    let slot = -1;
+    for(let i = out.length - 1; i >= 0; i--){
+      if(out[i].kind !== 'wnew' && out[i].kind !== 'swapNew'){ slot = i; break; }
+    }
+    if(slot < 0) slot = 0;
+    out[slot] = {
+      kind:'revo', id:rid, name:'进化 · ' + rr.name, color:'#ffd166', icon:rr.icon,
+      tag:'⚡ 遗物进化', lvText:'点开选 A / B',
+      desc:'达成「' + ee.l + '」。点开后选一条分支，本局不可逆。',
+      hint:'A ' + ee.a.name + ' / B ' + ee.b.name
+    };
   }
   return out;
 }
@@ -845,6 +924,13 @@ function chooseCard(i){
   const o = curChoices[i];
   if(!o) return;
   if(o.kind === 'swapNew'){ openSwapConfirm(o.id); return; }
+  if(o.kind === 'revo'){ openRelicEvoConfirm(o.id); return; }
+  if(o.kind === 'revoTo'){
+    applyRelicEvo(o.id, o.pick);
+    applyChoice({ kind:'relicDone' });
+    finishChoice();
+    return;
+  }
   if(o.kind === 'swapBack'){
     if(swapBackup){ curChoices = swapBackup; swapBackup = null; renderCards('cards', curChoices); }
     return;
@@ -937,6 +1023,8 @@ function applyChoice(o){
       P.maxHp += 35;
       P.hp = Math.min(P.maxHp, P.hp + 35);
     }
+  } else if(o.kind === 'relicDone'){
+    /* 进化只改补丁，属性在下面统一重算 */
   } else if(o.kind === 'heal'){
     P.hp = Math.min(P.maxHp, P.hp + P.maxHp * 0.4);
     addText(P.x, P.y - 24, '+' + Math.round(P.maxHp * 0.4), '#8ee06b', 11);
@@ -981,18 +1069,20 @@ function addRelic(id){
   if(!r || P.relics[id]) return;
   P.relics[id] = 1;
   P.relicOrder.push(id);
+  /* 【6.0】进化条件从"拿到它的这一刻"开始算，不是从开局算 */
+  evoBaseline(id);
   /* 加最大生命的遗物：resetGame 里只在开局算过一次，局中抽到等于没生效。
      这里补一次即时结算（厚皮 / 血铠 / 硬化壳 / 骨肉牢笼）。
-     【3.0 修复】原来 thickskin 在 FLAT_HP 和下面的 if 里各加了一次 35，
+     【3.0 修复】最大生命的加值必须只在一个地方算，否则会重复；
      抽到「厚皮」实际 +70 —— 描述与代码不一致的老毛病。现在只留一处。 */
-  const FLAT_HP = { thickskin: 45, bloodarmor: 70, harden: 30, fleshcage: 50 };
+  const FLAT_HP = { bloodarmor: 70 };
   if(FLAT_HP[id]){
     P.maxHp += FLAT_HP[id];
     P.hp += FLAT_HP[id];
     addText(P.x, P.y - 30, '生命上限 +' + FLAT_HP[id], '#ff8fb0', 11);
   }
   /* 3.0：按百分比加生命的件（血肉流派），必须当场结算 */
-  const PCT_HP = { fleshmass: 0.30, fleshblood: 0.20 };
+  const PCT_HP = { fleshmass: 0.30, astral: 0.50 };
   if(PCT_HP[id]){
     const add = Math.round(P.maxHp * PCT_HP[id]);
     P.maxHp += add;

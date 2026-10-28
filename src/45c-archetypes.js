@@ -64,7 +64,14 @@ const ARCH = {
     blurb:'用覆盖面说话：冷却与弹道',
     tiers:['攻击间隔 -8%','弹道 +1','每 10 次命中让一把武器立刻装填']
   },
+  /* 【6.0 修复】暴击原来没有 own —— 它是**公共流派**，谁都能点。
+     后果在 archcheck 里看得很清楚：游侠 18.8 分 Ⅲ 级、工程师 18.8 分 Ⅲ 级、
+     厨师也能点到 Ⅲ 级。三个角色的"最高流派"是同一条，这就是
+     "玩到后面所有角色都一个样"的机制来源。
+
+     现在它归游侠（他的暴击倍率本来就是全角色最高，×3.6）。 */
   crit: {
+    own:'ranger',
     name:'暴击', col:'#ffd166', icon:'star', tags:['crit','lucky'],
     blurb:'把伤害押在每一次 roll 上',
     tiers:['暴击率 +5%','暴击伤害 +25%','暴击时 15% 伤害溅射周围']
@@ -85,12 +92,12 @@ const ARCH = {
   turret: {
     own:'engineer', name:'炮台', col:'#ffe066', icon:'turret', tags:['turret','summon','proj'],
     blurb:'布得越多越强，炮台之间互相充能',
-    tiers:['每种炮台上限 +1','炮台冷却 -13%','每座炮台让全武器冷却 -5%']
+    tiers:['炮台存在时间 +25%','炮台冷却 -15%','每座炮台让全武器冷却 -5%']
   },
   grid: {
     own:'engineer', name:'电网', col:'#ffd166', icon:'bolt', tags:['volt','grid','blast'],
     blurb:'铺开场，让电流自己找路',
-    tiers:['感电多跳 1 次','雷区半径 +30%','感电目标受到的伤害 +15%']
+    tiers:['感电持续时间 +40%','感电敌人死亡时向附近传导感电','感电目标受到的伤害 +15%']
   },
   heat: {
     own:'chef', name:'火候', col:'#ff6b4d', icon:'flamer', tags:['fire','burn','blast'],
@@ -158,12 +165,20 @@ const ARCH_TIER_MIN = [2, 5, 8];        /* 三级里程碑所需点数 */
 
 /* 每个角色的 2~3 条路线。第一条是"本命"（起步就有一点倾斜），
    其余靠玩家自己用遗物与结晶把点数堆上去。 */
+/* 【6.0 修复】这里原来有两条**永远不可能涨**的路线：
+     engineer 的 thorns 是骑士专属（own:'knight'），archPtsRaw 第一行就 return 0；
+     chef 的 flesh 同理。
+   也就是说工程师名义上有三条路，实际只有 shield + crit；
+   厨师实际只有 elem + crit。这是把"别人的路线"填进自己的表里，
+   玩家在界面上看到一条永远不动的路线，却找不到原因。
+
+   现在每个角色的三条路线**全部是自己专属的**，没有一条公共路线。 */
 const CHAR_ROUTES = {
   knight:   ['rage', 'flesh', 'thorns'],
   ranger:   ['charge', 'barrage', 'crit'],
-  engineer: ['shield', 'thorns', 'crit'],
+  engineer: ['shield', 'turret', 'grid'],
   keeper:   ['beast', 'sacrifice', 'growth'],
-  chef:     ['elem', 'crit', 'flesh'],
+  chef:     ['elem', 'heat', 'freeze'],
 };
 
 /* 角色天生倾斜：起始就把对应流派推到 I 级附近，
@@ -271,15 +286,11 @@ function refreshArch(silent){
     if(t > seen){
       P.archSeen[id] = t;
       if(silent) continue;
-      if(t === 1){
-        showToast('◈ 流派成型：' + ARCH[id].name);
-        state.flash = Math.max(state.flash, 0.18);
-        sfx('arch');
-      } else {
-        showToast('◈ ' + ARCH[id].name + ' 提升至 ' + (t === 2 ? 'Ⅱ' : 'Ⅲ') + ' 级');
-        state.flash = Math.max(state.flash, 0.22);
-        sfx('arch');
-      }
+      /* 【6.0】不再播"流派成型"。玩家该看到的是**具体哪条效果生效了**，
+         而不是一个"你已经成型了"的标签。 */
+      showToast('◈ ' + ARCH[id].tiers[t - 1]);
+      state.flash = Math.max(state.flash, t === 1 ? 0.18 : 0.22);
+      sfx('arch');
     } else if(t < seen){
       P.archSeen[id] = t;
     }
